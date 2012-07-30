@@ -449,7 +449,7 @@ int main (int argc, char* argv[])
 	char const* defaults = NULL;
 	char const* dynamicClassesPlist = NULL;
 	char const* token = NULL;
-	char ch;
+	int ch;
 	DialogAction dialogAction = kShowDialog;
 	
 	while((ch = getopt_long(argc, argv, "eacd:mn:p:quax:t:w:l", longopts, NULL)) != -1)
