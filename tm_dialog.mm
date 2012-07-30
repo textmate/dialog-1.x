@@ -18,7 +18,7 @@ char const* AppName = "tm_dialog";
 
 char const* current_version ()
 {
-	char res[32];
+	static char res[32];
 	return sscanf("$Revision$", "$%*[^:]: %s $", res) == 1 ? res : "???";
 }
 
