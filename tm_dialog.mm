@@ -120,7 +120,7 @@ bool validate_proxy (id & outProxy)
 				fprintf(stderr, "%s: failed to establish connection with TextMate.\n", AppName);
 				if(!getenv("DIALOG_1_PORT_NAME"))
 				{
-					fprintf(stderr, "%s:\n");
+					fprintf(stderr, "%s:\n", AppName);
 					fprintf(stderr, "%s: When running outside TextMate you need to set the DIALOG_1_PORT_NAME environment variable.\n", AppName);
 					fprintf(stderr, "%s: In a new TextMate document press ^C on a line containing just: echo $DIALOG_1_PORT_NAME\n", AppName);
 					fprintf(stderr, "%s: Then in Terminal run: export DIALOG_1_PORT_NAME=«value»\n", AppName);
