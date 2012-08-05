@@ -14,13 +14,9 @@
 #include "TMDSemaphore.mm"		// TODO we should really export this from the plugin instead and link against the plugin
 #import "Dialog.h"
 
-char const* AppName = "tm_dialog";
-
-char const* current_version ()
-{
-	static char res[32];
-	return sscanf("$Revision$", "$%*[^:]: %s $", res) == 1 ? res : "???";
-}
+static char const* const AppName = "tm_dialog";
+static double const AppVersion   = 1.0;
+static size_t const AppRevision  = APP_REVISION;
 
 id read_property_list_from_data (NSData* data)
 {
@@ -315,7 +311,7 @@ int contact_server_show_nib (std::string nibName, NSMutableDictionary* someParam
 void usage ()
 {
 	fprintf(stderr, 
-		"%1$s r%2$s (" __DATE__ ")\n"
+		"%1$s %2$.1f (" COMPILE_DATE " revision %3$zu)\n"
 		"Usage (dialog): %1$s [-cdnmqp] nib_file\n"
 		"Usage (window): %1$s [-cdnpaxts] nib_file\n"
 		"Usage (alert): %1$s [-p] -e [-i|-c|-w]\n"
@@ -353,7 +349,7 @@ void usage ()
 	  "Otherwise, TextMate's UI thread will hang, waiting for your command to complete.\n"
 	  "You can recover from such a hang by killing the tm_dialog process in Terminal.\n"
 		"\n"
-		"", AppName, current_version());
+		"", AppName, AppVersion, AppRevision);
 }
 
 std::string find_nib (std::string nibName)
@@ -451,7 +447,8 @@ int main (int argc, char* argv[])
 	char const* token = NULL;
 	int ch;
 	DialogAction dialogAction = kShowDialog;
-	
+
+	setprogname(AppName); // when called from tm_dialog2 (via execv()) our getprogname is wrong, which is used by getopt_long().
 	while((ch = getopt_long(argc, argv, "eacd:mn:p:quax:t:w:l", longopts, NULL)) != -1)
 	{
 		switch(ch)
@@ -471,7 +468,7 @@ int main (int argc, char* argv[])
 			case 'w':	dialogAction = kAsyncWait; token = optarg;			break;
 			case 'l':	dialogAction = kAsyncList;			break;
 
-			default:		usage();						break;
+			default:		usage();						return 1;
 		}
 	}
 
