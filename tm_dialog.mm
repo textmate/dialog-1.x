@@ -375,7 +375,7 @@ std::string find_nib (std::string nibName)
 		candidates.push_back(nibName);
 	}
 
-	for(typeof(candidates.begin()) it = candidates.begin(); it != candidates.end(); ++it)
+	for(decltype(candidates.begin()) it = candidates.begin(); it != candidates.end(); ++it)
 	{
 		struct stat sb;
 		if(stat(it->c_str(), &sb) == 0)
