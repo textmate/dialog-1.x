@@ -438,6 +438,34 @@ static int sNextWindowControllerToken = 1;
 - (NSPoint)positionForWindowUnderCaret;
 @end
 
+@interface DialogPopupMenuTarget : NSObject
+{
+	NSInteger selectedIndex;
+}
+@property NSInteger selectedIndex;
+@end
+
+@implementation DialogPopupMenuTarget
+@synthesize selectedIndex;
+- (id)init
+{
+	if((self = [super init]))
+		self.selectedIndex = NSNotFound;
+	return self;
+}
+
+- (BOOL)validateMenuItem:(NSMenuItem*)menuItem
+{
+	return [menuItem action] == @selector(takeSelectedItemIndexFrom:);
+}
+
+- (void)takeSelectedItemIndexFrom:(id)sender
+{
+	NSAssert([sender isKindOfClass:[NSMenuItem class]], @"Unexpected sender for menu target");
+	self.selectedIndex = [(NSMenuItem*)sender tag];
+}
+@end
+
 @implementation Dialog
 - (id)initWithPlugInController:(id <TMPlugInController>)aController
 {
@@ -679,57 +707,43 @@ static int sNextWindowControllerToken = 1;
 
 - (id)showMenuWithOptions:(NSDictionary*)someOptions
 {
-	MenuRef menu_ref;
-	CreateNewMenu(0 /* menu id */, kMenuAttrDoNotCacheImage, &menu_ref);
-	SetMenuFont(menu_ref, 0, [[NSUserDefaults standardUserDefaults] integerForKey:@"OakBundleManagerDisambiguateMenuFontSize"] ?: 12);
+	NSMenu* menu = [[[NSMenu alloc] init] autorelease];
+	[menu setFont:[NSFont menuFontOfSize:([[NSUserDefaults standardUserDefaults] integerForKey:@"OakBundleManagerDisambiguateMenuFontSize"] ?: [NSFont smallSystemFontSize])]];
+	DialogPopupMenuTarget* menuTarget = [[[DialogPopupMenuTarget alloc] init] autorelease];
 
-	int item_id = 0, item_index = 0;
+	int item_id = 0;
 	NSArray* menuItems = [[[someOptions objectForKey:@"menuItems"] retain] autorelease];
 	enumerate(menuItems, NSDictionary* menuItem)
 	{
 		if([[menuItem objectForKey:@"separator"] intValue])
 		{
-			AppendMenuItemTextWithCFString(menu_ref, CFSTR(""), kMenuItemAttrSeparator, item_index++, NULL);
+			[menu addItem:[NSMenuItem separatorItem]];
 		}
 		else
 		{
-			MenuItemIndex index;
-			AppendMenuItemTextWithCFString(menu_ref, (CFStringRef)[menuItem objectForKey:@"title"], 0, item_index++, &index);
+			NSMenuItem* theItem = [menu addItemWithTitle:[menuItem objectForKey:@"title"] action:@selector(takeSelectedItemIndexFrom:) keyEquivalent:@""];
+			[theItem setTarget:menuTarget];
+			[theItem setTag:item_id];
 			if(++item_id <= 10)
 			{
-				SetMenuItemCommandKey(menu_ref, index, NO, item_id == 10 ? '0' : '1' + (item_id-1));
-				SetMenuItemModifiers(menu_ref, index, kMenuNoCommandModifier);
+				[theItem setKeyEquivalent:[NSString stringWithFormat:@"%d", item_id % 10]];
+				[theItem setKeyEquivalentModifierMask:0];
 			}
-			// SetMenuItemIndent(menu_ref, index, 1);
 		}
-		// AppendMenuItemTextWithCFString(menu_ref, NULL, kMenuItemAttrSectionHeader, 0, NULL);
 	}
 
 	NSPoint pos = [NSEvent mouseLocation];
 	if(id textView = [NSApp targetForAction:@selector(positionForWindowUnderCaret)])
 		pos = [textView positionForWindowUnderCaret];
 
-	NSRect mainScreen = [[NSScreen mainScreen] frame];
-	enumerate([NSScreen screens], NSScreen* candidate)
-	{
-		if(NSMinX([candidate frame]) == 0.0f && NSMinY([candidate frame]) == 0.0f)
-			mainScreen = [candidate frame];
-	}
-
-	short top = lroundf(NSMaxY(mainScreen) - pos.y);
-	short left = lroundf(pos.x - NSMinX(mainScreen));
-	long res = PopUpMenuSelect(menu_ref, top, left, 0 /* pop-up item */);
-
 	NSMutableDictionary* selectedItem = [NSMutableDictionary dictionary];
-	if(res != 0)
+
+	if([menu popUpMenuPositioningItem:nil atLocation:pos inView:nil] && menuTarget.selectedIndex != NSNotFound)
 	{
-		MenuCommand cmd = 0;
-		GetMenuItemCommandID(menu_ref, res, &cmd);
-		[selectedItem setObject:[NSNumber numberWithUnsignedInt:(unsigned)cmd] forKey:@"selectedIndex"];
-		[selectedItem setObject:[menuItems objectAtIndex:(unsigned)cmd] forKey:@"selectedMenuItem"];
+		[selectedItem setObject:[NSNumber numberWithInteger:menuTarget.selectedIndex] forKey:@"selectedIndex"];
+		[selectedItem setObject:[menuItems objectAtIndex:menuTarget.selectedIndex] forKey:@"selectedMenuItem"];
 	}
 
-	DisposeMenu(menu_ref);
 	return selectedItem;
 }
 @end
