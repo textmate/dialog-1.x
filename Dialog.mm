@@ -196,7 +196,7 @@
 	}
 	@catch(NSException* e) {
 		// our retain count is too high if we reach this branch (<rdar://4803521>) so no RAII idioms for Cocoa, which is why we have the didLock variable, etc.
-		NSLog(@"%s failed to instantiate nib (%@)", SELNAME(_cmd), [e reason]);
+		NSLog(@"%s failed to instantiate nib (%@)", sel_getName(_cmd), [e reason]);
 	}
 
 	[topLevelObjects retain];
@@ -237,7 +237,7 @@
 	}
 	else
 	{
-		NSLog(@"%s didn't find a window in nib", SELNAME(_cmd));
+		NSLog(@"%s didn't find a window in nib", sel_getName(_cmd));
 		[self cleanupAndRelease:self];
 	}
 
@@ -257,7 +257,7 @@
 
 - (void)dealloc
 {
-//	NSLog(@"%s %@ %d", SELNAME(_cmd), self, token);
+//	NSLog(@"%s %@ %d", sel_getName(_cmd), self, token);
 	
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	
@@ -346,7 +346,7 @@ static int sNextWindowControllerToken = 1;
 
 - (void)dealloc
 {
-//	NSLog(@"%s %@ %d", SELNAME(_cmd), self, token);
+//	NSLog(@"%s %@ %d", sel_getName(_cmd), self, token);
 	
 	[[NSNotificationCenter defaultCenter] removeObserver:self];	
 	[super dealloc];
@@ -579,7 +579,7 @@ static int sNextWindowControllerToken = 1;
 	
 	if(![[NSFileManager defaultManager] fileExistsAtPath:aNibPath])
 	{
-		NSLog(@"%s nib file not found: %@", SELNAME(_cmd), aNibPath);
+		NSLog(@"%s nib file not found: %@", sel_getName(_cmd), aNibPath);
 		return nil;
 	}
 
@@ -589,13 +589,13 @@ static int sNextWindowControllerToken = 1;
 	NSNib* nib = [[[NSNib alloc] initWithContentsOfURL:[NSURL fileURLWithPath:aNibPath]] autorelease];
 	if(!nib)
 	{
-		NSLog(@"%s failed loading nib: %@", SELNAME(_cmd), aNibPath);
+		NSLog(@"%s failed loading nib: %@", sel_getName(_cmd), aNibPath);
 		return nil;
 	}
 
 	TMDNibWindowController* nibOwner = [[TMDNibWindowController alloc] initWithParameters:someParameters modal:modal center:shouldCenter aysnc:async];
 	if(!nibOwner)
-		NSLog(@"%s couldn't create nib loader", SELNAME(_cmd));
+		NSLog(@"%s couldn't create nib loader", sel_getName(_cmd));
 	[nibOwner instantiateNib:nib];
 	
 //	if(async || (not modal))
