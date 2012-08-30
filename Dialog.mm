@@ -438,14 +438,14 @@ static int sNextWindowControllerToken = 1;
 - (NSPoint)positionForWindowUnderCaret;
 @end
 
-@interface DialogPopupMenuTarget : NSObject
+@interface LegacyDialogPopupMenuTarget : NSObject
 {
 	NSInteger selectedIndex;
 }
 @property NSInteger selectedIndex;
 @end
 
-@implementation DialogPopupMenuTarget
+@implementation LegacyDialogPopupMenuTarget
 @synthesize selectedIndex;
 - (id)init
 {
@@ -709,7 +709,7 @@ static int sNextWindowControllerToken = 1;
 {
 	NSMenu* menu = [[[NSMenu alloc] init] autorelease];
 	[menu setFont:[NSFont menuFontOfSize:([[NSUserDefaults standardUserDefaults] integerForKey:@"OakBundleManagerDisambiguateMenuFontSize"] ?: [NSFont smallSystemFontSize])]];
-	DialogPopupMenuTarget* menuTarget = [[[DialogPopupMenuTarget alloc] init] autorelease];
+	LegacyDialogPopupMenuTarget* menuTarget = [[[LegacyDialogPopupMenuTarget alloc] init] autorelease];
 
 	int item_id = 0;
 	NSArray* menuItems = [[[someOptions objectForKey:@"menuItems"] retain] autorelease];
