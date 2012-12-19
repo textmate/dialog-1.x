@@ -6,6 +6,7 @@ CP_Resources        = Info.plist English.lproj @tm_dialog
 PLIST_FLAGS        += -d'EXECUTABLE_NAME=Dialog' -d'PRODUCT_NAME=Dialog'
 
 BUNDLE_EXTENSION    = tmplugin
+OBJCXX_FLAGS       += -fno-objc-arc
 LN_FLAGS           += -bundle
 
 FRAMEWORKS          = Cocoa Carbon
