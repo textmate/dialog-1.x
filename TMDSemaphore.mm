@@ -32,7 +32,7 @@
 
 + (TMDSemaphore*)semaphoreWithName:(NSString *)name
 {
-	return [[[self alloc] initWithName:name] autorelease];
+	return [[[TMDSemaphore alloc] initWithName:name] autorelease];
 }
 
 - (id)initWithName:(NSString *)inName;
