@@ -169,8 +169,8 @@
 		for(size_t i = 2; i < [[invocation methodSignature] numberOfArguments]; ++i)
 		{
 			id arg = nil;
-			if([invocation getArgument:&arg atIndex:i], arg)
-				[dict setObject:arg forKey:[argNames objectAtIndex:i - 2]];
+			[invocation getArgument:&arg atIndex:i];
+			[dict setObject:(arg ?: @"") forKey:[argNames objectAtIndex:i - 2]];
 		}
 		[parameters setObject:dict forKey:@"result"];
 		
