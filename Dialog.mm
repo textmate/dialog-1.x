@@ -712,6 +712,7 @@ static int sNextWindowControllerToken = 1;
 	LegacyDialogPopupMenuTarget* menuTarget = [[[LegacyDialogPopupMenuTarget alloc] init] autorelease];
 
 	int item_id = 0;
+	char key = '0';
 	NSArray* menuItems = [[[someOptions objectForKey:@"menuItems"] retain] autorelease];
 	enumerate(menuItems, NSDictionary* menuItem)
 	{
@@ -721,15 +722,12 @@ static int sNextWindowControllerToken = 1;
 		}
 		else
 		{
-			NSMenuItem* theItem = [menu addItemWithTitle:[menuItem objectForKey:@"title"] action:@selector(takeSelectedItemIndexFrom:) keyEquivalent:@""];
+			NSMenuItem* theItem = [menu addItemWithTitle:[menuItem objectForKey:@"title"] action:@selector(takeSelectedItemIndexFrom:) keyEquivalent:key++ < '9' ? [NSString stringWithFormat:@"%c", key] : @""];
+			[theItem setKeyEquivalentModifierMask:0];
 			[theItem setTarget:menuTarget];
 			[theItem setTag:item_id];
-			if(++item_id <= 10)
-			{
-				[theItem setKeyEquivalent:[NSString stringWithFormat:@"%d", item_id % 10]];
-				[theItem setKeyEquivalentModifierMask:0];
-			}
 		}
+		++item_id;
 	}
 
 	NSPoint pos = [NSEvent mouseLocation];
