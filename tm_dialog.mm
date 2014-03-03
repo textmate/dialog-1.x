@@ -235,7 +235,7 @@ int contact_server_async_list ()
 		else
 		{
 			NSArray* nibs = [result objectForKey:@"nibs"];
-			enumerate(nibs, NSDictionary * nib)
+			for(NSDictionary * nib in nibs)
 			{
 				NSString*	windowTitleString	= [nib objectForKey:@"windowTitle"];
 				const char* windowTitleC		= "<no title>";

@@ -1,9 +1,5 @@
 #import <Cocoa/Cocoa.h>
 
-#ifndef enumerate
-#define enumerate(container,var) for(NSEnumerator* _enumerator = [container objectEnumerator]; var = [_enumerator nextObject]; )
-#endif
-
 @protocol TMPlugInController
 - (float)version;
 @end

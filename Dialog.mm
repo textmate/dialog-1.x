@@ -100,7 +100,7 @@
 
 - (void)makeControllersCommitEditing
 {
-	enumerate(topLevelObjects, id object)
+	for(id object in topLevelObjects)
 	{
 		if([object respondsToSelector:@selector(commitEditing)])
 			[object commitEditing];
@@ -118,7 +118,7 @@
 	[self makeControllersCommitEditing];
 
 	// if we do not manually unbind, the object in the nib will keep us retained, and thus we will never reach dealloc
-	enumerate(topLevelObjects, id object)
+	for(id object in topLevelObjects)
 	{
 		if([object isKindOfClass:[NSObjectController class]])
 			[object unbind:@"contentObject"];
@@ -200,7 +200,7 @@
 	}
 
 	[topLevelObjects retain];
-	enumerate(topLevelObjects, id object)
+	for(id object in topLevelObjects)
 	{
 		if([object isKindOfClass:[NSWindow class]])
 			[self setWindow:object];
@@ -249,7 +249,7 @@
 {
 	NSArray *	keys = [updatedParams allKeys];
 
-	enumerate(keys, id key)
+	for(id key in keys)
 	{
 		[parameters setValue:[updatedParams valueForKey:key] forKey:key];
 	}
@@ -261,7 +261,7 @@
 	
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	
-	enumerate(topLevelObjects, id object)
+	for(id object in topLevelObjects)
 		[object release];
 	[topLevelObjects release];
 	[parameters release];
@@ -287,7 +287,7 @@ static int sNextWindowControllerToken = 1;
 {
 	NSMutableArray*	outNibArray = [NSMutableArray array];
 	
-	enumerate(sWindowControllers, TMDWindowController* windowController)
+	for(TMDWindowController* windowController in sWindowControllers)
 	{
 //		if( [windowController isAsync] )
 		{
@@ -310,7 +310,7 @@ static int sNextWindowControllerToken = 1;
 {
 	TMDWindowController*	outLoader = nil;
 	
-	enumerate(sWindowControllers, TMDWindowController* loader)
+	for(TMDWindowController* loader in sWindowControllers)
 	{
 		if([loader token] == token)
 		{
@@ -553,7 +553,7 @@ static int sNextWindowControllerToken = 1;
 		NSArray* windows = [NSApp windows];
 		NSWindow* chosenWindow = nil;
 		
-		enumerate(windows, NSWindow * window)
+		for(NSWindow * window in windows)
 		{
 			OakDocumentController*	documentController = [window controller];
 			if([documentController isKindOfClass:[OakDocumentController class]])
@@ -600,7 +600,7 @@ static int sNextWindowControllerToken = 1;
 
 - (id)showNib:(NSString*)aNibPath withParameters:(id)someParameters andInitialValues:(NSDictionary*)initialValues dynamicClasses:(NSDictionary*)dynamicClasses modal:(BOOL)modal center:(BOOL)shouldCenter async:(BOOL)async
 {
-	enumerate([dynamicClasses allKeys], id key)
+	for(id key in [dynamicClasses allKeys])
 		[TMDChameleon createSubclassNamed:key withValues:[dynamicClasses objectForKey:key]];
 
 	id output;
@@ -714,7 +714,7 @@ static int sNextWindowControllerToken = 1;
 	int item_id = 0;
 	char key = '0';
 	NSArray* menuItems = [[[someOptions objectForKey:@"menuItems"] retain] autorelease];
-	enumerate(menuItems, NSDictionary* menuItem)
+	for(NSDictionary* menuItem in menuItems)
 	{
 		if([[menuItem objectForKey:@"separator"] intValue])
 		{
