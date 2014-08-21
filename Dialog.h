@@ -1,13 +1,13 @@
 #import <Cocoa/Cocoa.h>
 
 @protocol TMPlugInController
-- (float)version;
+- (CGFloat)version;
 @end
 
-#define TextMateDialogServerProtocolVersion 9
+static NSInteger TextMateDialogServerProtocolVersion = 9;
 
 @protocol TextMateDialogServerProtocol
-- (int)textMateDialogServerProtocolVersion;
+- (NSInteger)textMateDialogServerProtocolVersion;
 - (id)showNib:(NSString*)aNibPath withParameters:(id)someParameters andInitialValues:(NSDictionary*)initialValues dynamicClasses:(NSDictionary*)dynamicClasses modal:(BOOL)flag center:(BOOL)shouldCenter async:(BOOL)async;
 
 // Async window support
