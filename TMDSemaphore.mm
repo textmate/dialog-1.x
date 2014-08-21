@@ -1,26 +1,26 @@
-// 
+//
 //  TMDSemaphore.mm
 //  TM dialog server
-//  
+//
 //  Created by Chris Thomas on 2006-12-06.
-// 
+//
 
 #import "TMDSemaphore.h"
 #import <unistd.h>
 
 @implementation TMDSemaphore
 
-+ (NSString *)nameForToken:(int)token
++ (NSString*)nameForToken:(int)token
 {
 	return [NSString stringWithFormat:@"/tm_dialog async/%d/%d", getuid(), token];
 }
 
-+ (NSString *)nameForTokenString:(const char *)token
++ (NSString*)nameForTokenString:(const char*)token
 {
 	return [NSString stringWithFormat:@"/tm_dialog async/%d/%s", getuid(), token];
 }
 
-+ (TMDSemaphore*)semaphoreForTokenString:(const char *)token
++ (TMDSemaphore*)semaphoreForTokenString:(const char*)token
 {
 	return [self semaphoreWithName:[self nameForTokenString:token]];
 }
@@ -30,12 +30,12 @@
 	return [self semaphoreWithName:[self nameForToken:token]];
 }
 
-+ (TMDSemaphore*)semaphoreWithName:(NSString *)name
++ (TMDSemaphore*)semaphoreWithName:(NSString*)name
 {
 	return [[[TMDSemaphore alloc] initWithName:name] autorelease];
 }
 
-- (id)initWithName:(NSString *)inName;
+- (id)initWithName:(NSString*)inName;
 {
 	name = [inName copy];
 	if(self = [super init])

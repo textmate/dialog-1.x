@@ -11,7 +11,7 @@
 #import <sys/stat.h>
 
 #import "TMDSemaphore.h"
-#include "TMDSemaphore.mm"		// TODO we should really export this from the plugin instead and link against the plugin
+#include "TMDSemaphore.mm"  // TODO we should really export this from the plugin instead and link against the plugin
 #import "Dialog.h"
 
 static char const* const AppName = "tm_dialog";
@@ -44,7 +44,7 @@ id read_property_list_from_string (char const* str)
 id read_property_list_from_file (int fd)
 {
 	NSMutableData*	data = [NSMutableData data];
-	
+
 	char buf[1024];
 	while(size_t len = read(fd, buf, sizeof(buf)))
 		[data appendBytes:buf length:len];
@@ -76,9 +76,9 @@ bool output_property_list (id plist)
 // if the TM dialog server is unavailable or the protocol version doesn't match.
 bool validate_proxy (id & outProxy)
 {
-	static	bool	proxyValid = false;
-	static id 		proxy = nil;
-	
+	static bool proxyValid = false;
+	static id proxy = nil;
+
 	// One shot validate -- if it isn't valid now, presumably it won't be ever
 	// (during the very short life of an instance of this tool)
 	if(not proxyValid)
@@ -125,7 +125,7 @@ bool validate_proxy (id & outProxy)
 			}
 		}
 	}
-	
+
 	outProxy = proxy;
 	return proxyValid;
 }
@@ -133,8 +133,8 @@ bool validate_proxy (id & outProxy)
 // contact_server_async_update: update (a subset of) the binding values.
 int contact_server_async_update (const char* token, NSMutableDictionary* someParameters)
 {
-	id	proxy;
-	int	returnCode = -1;
+	id proxy;
+	int returnCode = -1;
 
 	if(someParameters == nil)
 	{
@@ -156,14 +156,14 @@ int contact_server_async_update (const char* token, NSMutableDictionary* somePar
 // contact_server_async_close: close the window
 int contact_server_async_close (const char* token, bool ignoreFailure)
 {
-	id	proxy;
-	int	returnCode = -1;
+	id proxy;
+	int returnCode = -1;
 
 	if(validate_proxy(proxy))
 	{
 		id result = [proxy closeNib:[NSString stringWithUTF8String:token]];
 		returnCode = [[result objectForKey:@"returnCode"] intValue];
-		
+
 		if(ignoreFailure)
 		{
 			returnCode = 0;
@@ -184,18 +184,18 @@ int contact_server_async_close (const char* token, bool ignoreFailure)
 // then output the resulting plist returned by the dialog server.
 int contact_server_async_wait (const char* token)
 {
-	id	proxy;
-	int	returnCode = -1;
-	
+	id proxy;
+	int returnCode = -1;
+
 	if(validate_proxy(proxy))
 	{
 		id result;
-		TMDSemaphore *	semaphore = [TMDSemaphore semaphoreForTokenString:token];
+		TMDSemaphore* semaphore = [TMDSemaphore semaphoreForTokenString:token];
 
 		// Validate the window (throw away this result other than the returnCode)
 		result = [proxy retrieveNibResults:[NSString stringWithUTF8String:token]];
 		returnCode = [[result objectForKey:@"returnCode"] intValue];
-		
+
 		if(returnCode == 0)
 		{
 			[semaphore wait];
@@ -220,14 +220,14 @@ int contact_server_async_wait (const char* token)
 // contact_server_async_list: print a list of windows to stdout
 int contact_server_async_list ()
 {
-	id	proxy;
-	int	returnCode = -1;
-	
+	id proxy;
+	int returnCode = -1;
+
 	if(validate_proxy(proxy))
 	{
 		id result = [proxy listNibTokens];
 		returnCode = [[result objectForKey:@"returnCode"] intValue];
-		
+
 		if(returnCode != 0)
 		{
 			fprintf(stderr, "%s: Unknown error code '%d'\n", AppName, returnCode);
@@ -235,17 +235,15 @@ int contact_server_async_list ()
 		else
 		{
 			NSArray* nibs = [result objectForKey:@"nibs"];
-			for(NSDictionary * nib in nibs)
+			for(NSDictionary* nib in nibs)
 			{
-				NSString*	windowTitleString	= [nib objectForKey:@"windowTitle"];
-				const char* windowTitleC		= "<no title>";
-				int			windowToken			= [[nib objectForKey:@"token"] intValue];
+				NSString* windowTitleString = [nib objectForKey:@"windowTitle"];
+				const char* windowTitleC    = "<no title>";
+				int windowToken             = [[nib objectForKey:@"token"] intValue];
 
-				if(windowTitleString != nil
-					&& not [windowTitleString isEqualToString:@""])
-				{
+				if(windowTitleString != nil && not [windowTitleString isEqualToString:@""])
 					windowTitleC = [windowTitleString UTF8String];
-				}				
+
 				fprintf(stdout, "%d (%s)\n", windowToken, windowTitleC);
 			}
 		}
@@ -259,16 +257,16 @@ int contact_server_show_nib (std::string nibName, NSMutableDictionary* someParam
 {
 	int res = -1;
 	id proxy;
-	
+
 	if(validate_proxy(proxy))
 	{
 		NSString* aNibPath = [NSString stringWithUTF8String:nibName.c_str()];
 		NSDictionary* parameters = (NSDictionary*)[proxy showNib:aNibPath withParameters:(someParameters ?: [NSMutableDictionary dictionary]) andInitialValues:initialValues dynamicClasses:dynamicClasses modal:modal center:center async:async];
 
 		const char*	token = [[NSString stringWithFormat:@"%@", [parameters objectForKey:@"token"]] UTF8String];
-		
+
 		res = [[parameters objectForKey:@"returnCode"] intValue];
-		
+
 		// Async mode: print just the token for the new window
 		if(res != 0)
 		{
@@ -297,10 +295,10 @@ int contact_server_show_nib (std::string nibName, NSMutableDictionary* someParam
 				// Not async, not modal. The task had better be detached from TM, or TM will hang
 				// until the task is killed. Wait until something happens.
 				res = contact_server_async_wait(token);
+
 				if(not quiet)
-				{
 					output_property_list(parameters);
-				}
+
 				contact_server_async_close(token, false);	// false -> log errors
 			}
 		}
@@ -310,7 +308,7 @@ int contact_server_show_nib (std::string nibName, NSMutableDictionary* someParam
 
 void usage ()
 {
-	fprintf(stderr, 
+	fprintf(stderr,
 		"%1$s %2$.1f (" COMPILE_DATE " revision %3$zu)\n"
 		"Usage (dialog): %1$s [-cdnmqp] nib_file\n"
 		"Usage (window): %1$s [-cdnpaxts] nib_file\n"
@@ -319,35 +317,35 @@ void usage ()
 		"Usage (menu): %1$s [-p] -u\n"
 		"\n"
 		"Dialog Options:\n"
-      " -c, --center                 Center the window on screen.\n"
-      " -d, --defaults <plist>       Register initial values for user defaults.\n"
-      " -n, --new-items <plist>      A key/value list of classes (the key) which should dynamically be created at run-time for use as the NSArrayController’s object class. The value (a dictionary) is how instances of this class should be initialized (the actual instance will be an NSMutableDictionary with these values).\n"
-      " -m, --modal                  Show window as modal (other windows will be inaccessible).\n"
-      " -p, --parameters <plist>     Provide parameters as a plist.\n"
-      " -q, --quiet                  Do not write result to stdout.\n"
+		" -c, --center                 Center the window on screen.\n"
+		" -d, --defaults <plist>       Register initial values for user defaults.\n"
+		" -n, --new-items <plist>      A key/value list of classes (the key) which should dynamically be created at run-time for use as the NSArrayController’s object class. The value (a dictionary) is how instances of this class should be initialized (the actual instance will be an NSMutableDictionary with these values).\n"
+		" -m, --modal                  Show window as modal (other windows will be inaccessible).\n"
+		" -p, --parameters <plist>     Provide parameters as a plist.\n"
+		" -q, --quiet                  Do not write result to stdout.\n"
 //      " -s, --target-path <path>     Attempt to display the window as a sheet on the window containing\n"
 //	  "                              the given path. Applies to alerts and async windows only.\n"
-      "\nAlert Options:\n"
-      " -e, --alert                  Show alert. Parameters: 'title', 'message', 'buttons'\n"
-	  "                              'alertStyle' -- can be 'warning,' 'informational',\n"
-	  "                              'critical'.  Returns the button index.\n"
-      "Menu Options:\n"
-      " -u, --menu                   Treat parameters as a menu structure.\n"
-      "\nAsync Window Options:\n"
-      " -a, --async-window           Displays the window and returns a reference token for it\n"
-      "                              in the output property list.\n"
-      " -l, --list-windows           List async window tokens.\n"
-      " -t, --update-window <token>  Update an async window with new parameter values.\n"
-	  "                              Use the --parameters argument (or stdin) to specify the\n"
-	  "                              updated parameters.\n"
-      " -x, --close-window <token>   Close and release an async window.\n"
-      " -w, --wait-for-input <token> Wait for user input from the given async window.\n"
-	  "\nNote:\n"
-	  "If you DO NOT use the -m/--modal option,\n"
-	  "OR you create an async window and then use the wait-for-input subcommand,\n"
-	  "you must run tm_dialog in a detached/backgrounded process (`mycommand 2&>1 &` in bash).\n"
-	  "Otherwise, TextMate's UI thread will hang, waiting for your command to complete.\n"
-	  "You can recover from such a hang by killing the tm_dialog process in Terminal.\n"
+		"\nAlert Options:\n"
+		" -e, --alert                  Show alert. Parameters: 'title', 'message', 'buttons'\n"
+		"                              'alertStyle' -- can be 'warning,' 'informational',\n"
+		"                              'critical'.  Returns the button index.\n"
+		"Menu Options:\n"
+		" -u, --menu                   Treat parameters as a menu structure.\n"
+		"\nAsync Window Options:\n"
+		" -a, --async-window           Displays the window and returns a reference token for it\n"
+		"                              in the output property list.\n"
+		" -l, --list-windows           List async window tokens.\n"
+		" -t, --update-window <token>  Update an async window with new parameter values.\n"
+		"                              Use the --parameters argument (or stdin) to specify the\n"
+		"                              updated parameters.\n"
+		" -x, --close-window <token>   Close and release an async window.\n"
+		" -w, --wait-for-input <token> Wait for user input from the given async window.\n"
+		"\nNote:\n"
+		"If you DO NOT use the -m/--modal option,\n"
+		"OR you create an async window and then use the wait-for-input subcommand,\n"
+		"you must run tm_dialog in a detached/backgrounded process (`mycommand 2&>1 &` in bash).\n"
+		"Otherwise, TextMate's UI thread will hang, waiting for your command to complete.\n"
+		"You can recover from such a hang by killing the tm_dialog process in Terminal.\n"
 		"\n"
 		"", AppName, AppVersion, AppRevision);
 }
@@ -424,20 +422,20 @@ int main (int argc, char* argv[])
 	};
 
 	static struct option const longopts[] = {
-		{ "alert",				no_argument,			0,		'e'	},
-		{ "center",				no_argument,			0,		'c'	},
-		{ "defaults",			required_argument,	0,		'd'	},
-		{ "new-items",			required_argument,	0,		'n'	},
-		{ "modal",				no_argument,			0,		'm'	},
-		{ "parameters",		required_argument,	0,		'p'	},
-		{ "quiet",				no_argument,			0,		'q'	},
-		{ "menu",				no_argument,			0,		'u'	},
-		{ "async-window",		no_argument,			0,		'a'	},
-		{ "close-window",		required_argument,	0,		'x'	},
-		{ "update-window",	required_argument,	0,		't'	},
-		{ "wait-for-input",	required_argument,	0,		'w'	},
-		{ "list-windows",		no_argument,			0,		'l'	},
-		{ 0,						0,							0,		0		}
+		{ "alert",          no_argument,         0,     'e'   },
+		{ "center",         no_argument,         0,     'c'   },
+		{ "defaults",       required_argument,   0,     'd'   },
+		{ "new-items",      required_argument,   0,     'n'   },
+		{ "modal",          no_argument,         0,     'm'   },
+		{ "parameters",     required_argument,   0,     'p'   },
+		{ "quiet",          no_argument,         0,     'q'   },
+		{ "menu",           no_argument,         0,     'u'   },
+		{ "async-window",   no_argument,         0,     'a'   },
+		{ "close-window",   required_argument,   0,     'x'   },
+		{ "update-window",  required_argument,   0,     't'   },
+		{ "wait-for-input", required_argument,   0,     'w'   },
+		{ "list-windows",   no_argument,         0,     'l'   },
+		{ 0,                0,                   0,     0     }
 	};
 
 	bool center = false, modal = false, quiet = false;
@@ -453,22 +451,20 @@ int main (int argc, char* argv[])
 	{
 		switch(ch)
 		{
-			case 'e':	dialogAction = kShowAlert;				break;
-			case 'c':	center = true;				break;
-			case 'd':	defaults = optarg;		break;
-			case 'm':	modal = true;				break;
-			case 'n':	dynamicClassesPlist = optarg;			break;
-			case 'p':	parameters = optarg;		break;
-			case 'q':	quiet = true;				break;
-			case 'u':	dialogAction = kShowMenu;				break;
-			
-			case 'a':	dialogAction = kAsyncCreate;				break;
-			case 'x':	dialogAction = kAsyncClose; token = optarg;			break;
-			case 't':	dialogAction = kAsyncUpdate; token = optarg;			break;
-			case 'w':	dialogAction = kAsyncWait; token = optarg;			break;
-			case 'l':	dialogAction = kAsyncList;			break;
-
-			default:		usage();						return 1;
+			case 'e':   dialogAction = kShowAlert;    break;
+			case 'c':   center = true;                break;
+			case 'd':   defaults = optarg;            break;
+			case 'm':   modal = true;                 break;
+			case 'n':   dynamicClassesPlist = optarg; break;
+			case 'p':   parameters = optarg;          break;
+			case 'q':   quiet = true;                 break;
+			case 'u':   dialogAction = kShowMenu;     break;
+			case 'a':   dialogAction = kAsyncCreate;  break;
+			case 'x':   dialogAction = kAsyncClose; token = optarg;  break;
+			case 't':   dialogAction = kAsyncUpdate; token = optarg; break;
+			case 'w':   dialogAction = kAsyncWait; token = optarg;   break;
+			case 'l':   dialogAction = kAsyncList;    break;
+			default:    usage();                      return 1;
 		}
 	}
 
@@ -481,7 +477,7 @@ int main (int argc, char* argv[])
 	{
 		if(modal)
 			fprintf(stderr, "%s: warning: Ignoring 'modal' option\n", AppName);
-		
+
 		if(quiet)
 			fprintf(stderr, "%s: warning: Ignoring 'quiet' option.\n", AppName);
 	}
@@ -543,7 +539,7 @@ int main (int argc, char* argv[])
 				usage();
 			}
 		} break;
-		case kAsyncUpdate:	
+		case kAsyncUpdate:
 		{
 			id plist = read_property_list_argument(parameters);
 			res = contact_server_async_update(token, plist);

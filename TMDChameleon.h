@@ -8,7 +8,5 @@
 #import <Cocoa/Cocoa.h>
 
 @interface TMDChameleon : NSObject
-{
-}
 + (BOOL)createSubclassNamed:(NSString*)aName withValues:(NSDictionary*)values;
 @end
