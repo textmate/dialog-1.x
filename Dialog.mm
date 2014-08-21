@@ -39,17 +39,17 @@
 	BOOL center;
 	BOOL async;
 	BOOL didCleanup;
-	int token;
+	NSInteger token;
 }
 @property (nonatomic) TMDWindowController* retainedSelf;
 
 // Fetch an existing controller
-+ (TMDWindowController*)windowControllerForToken:(int)token;
++ (TMDWindowController*)windowControllerForToken:(NSInteger)token;
 + (NSArray*)nibDescriptions;
 - (void)cleanupAndRelease:(id)sender;
 
 // return unique ID for this TMDWindowController instance
-- (int)token;
+- (NSInteger)token;
 - (NSString*)windowTitle;
 - (void)setWindow:(NSWindow*)aWindow;
 - (BOOL)isAsync;
@@ -82,7 +82,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 	return outNibArray;
 }
 
-+ (TMDWindowController*)windowControllerForToken:(int)token
++ (TMDWindowController*)windowControllerForToken:(NSInteger)token
 {
 	TMDWindowController* outLoader = nil;
 
@@ -131,7 +131,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 	return async;
 }
 
-- (int)token
+- (NSInteger)token
 {
 	return token;
 }
@@ -147,7 +147,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 		[NSApp stopModal];
 
 	// Post dummy event; the event system sometimes stalls unless we do this after stopModal. See also connectionDidDie: in this file.
-	[NSApp postEvent:[NSEvent otherEventWithType:NSApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:0.0f windowNumber:0 context:nil subtype:0 data1:0 data2:0] atStart:NO];
+	[NSApp postEvent:[NSEvent otherEventWithType:NSApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:0 windowNumber:0 context:nil subtype:0 data1:0 data2:0] atStart:NO];
 
 	TMDSemaphore* semaphore = [TMDSemaphore semaphoreForTokenInt:token];
 	[semaphore stopWaiting];
@@ -197,7 +197,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 	[self cleanupAndRelease:self];
 
 	// post dummy event, since the system has a tendency to stall the next event, after replying to a DO message where the receiver has disappeared, posting this dummy event seems to solve it
-	[NSApp postEvent:[NSEvent otherEventWithType:NSApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:0.0f windowNumber:0 context:nil subtype:0 data1:0 data2:0] atStart:NO];
+	[NSApp postEvent:[NSEvent otherEventWithType:NSApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:0 windowNumber:0 context:nil subtype:0 data1:0 data2:0] atStart:NO];
 }
 @end
 
@@ -303,7 +303,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 		types += @encode(id);
 		types += @encode(SEL);
 
-		unsigned numberOfArgs = [[str componentsSeparatedByString:@":"] count];
+		NSUInteger numberOfArgs = [[str componentsSeparatedByString:@":"] count];
 		while(numberOfArgs-- > 1)
 			types += @encode(id);
 
@@ -321,7 +321,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 		NSArray* argNames = [str componentsSeparatedByString:@":"];
 
 		NSMutableDictionary* dict = [NSMutableDictionary dictionary];
-		for(size_t i = 2; i < [[invocation methodSignature] numberOfArguments]; ++i)
+		for(NSUInteger i = 2; i < [[invocation methodSignature] numberOfArguments]; ++i)
 		{
 			__unsafe_unretained id arg = nil;
 			[invocation getArgument:&arg atIndex:i];
@@ -478,7 +478,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 	return self;
 }
 
-- (int)textMateDialogServerProtocolVersion
+- (NSInteger)textMateDialogServerProtocolVersion
 {
 	return TextMateDialogServerProtocolVersion;
 }
@@ -508,13 +508,13 @@ static NSUInteger sNextWindowControllerToken = 1;
 	// Setup buttons
 	if(buttonTitles != nil && [buttonTitles count] > 0)
 	{
-		unsigned int buttonCount = [buttonTitles count];
+		NSUInteger buttonCount = [buttonTitles count];
 
 		// NSAlert always preallocates the OK button.
 		// No -- docs are not entirely correct.
 //		[[[alert buttons] objectAtIndex:0] setTitle:[buttonTitles objectAtIndex:0]];
 
-		for(unsigned int index = 0; index < buttonCount; index += 1)
+		for(NSUInteger index = 0; index < buttonCount; index += 1)
 		{
 			NSString* buttonTitle = [buttonTitles objectAtIndex:index];
 			[alert addButtonWithTitle:buttonTitle];
@@ -572,8 +572,8 @@ static NSUInteger sNextWindowControllerToken = 1;
 
 	if(modal)
 	{
-		int alertResult = ([alert runModal] - NSAlertFirstButtonReturn);
-		resultDict = [NSDictionary dictionaryWithObject:[NSNumber numberWithInt:alertResult] forKey:@"buttonClicked"];
+		NSInteger alertResult = ([alert runModal] - NSAlertFirstButtonReturn);
+		resultDict = [NSDictionary dictionaryWithObject:[NSNumber numberWithInteger:alertResult] forKey:@"buttonClicked"];
 	}
 	return resultDict;
 }
@@ -626,14 +626,14 @@ static NSUInteger sNextWindowControllerToken = 1;
 		resultCode = 0;
 	}
 
-	return [NSDictionary dictionaryWithObject:[NSNumber numberWithUnsignedInt:resultCode] forKey:@"returnCode"];
+	return [NSDictionary dictionaryWithObject:[NSNumber numberWithInteger:resultCode] forKey:@"returnCode"];
 }
 
 // Async close
 - (id)closeNib:(id)token
 {
 	TMDWindowController* windowController = [TMDWindowController windowControllerForToken:[token intValue]];
-	int resultCode = -43;
+	NSInteger resultCode = -43;
 
 	if(windowController != nil)
 	{
@@ -641,14 +641,14 @@ static NSUInteger sNextWindowControllerToken = 1;
 		resultCode = 0;
 	}
 
-	return [NSDictionary dictionaryWithObject:[NSNumber numberWithUnsignedInt:resultCode] forKey:@"returnCode"];
+	return [NSDictionary dictionaryWithObject:[NSNumber numberWithInteger:resultCode] forKey:@"returnCode"];
 }
 
 // Async get results
 - (id)retrieveNibResults:(id)token
 {
 	TMDWindowController* windowController = [TMDWindowController windowControllerForToken:[token intValue]];
-	int resultCode = -43;
+	NSInteger resultCode = -43;
 	id results;
 
 	if(windowController != nil)
@@ -658,7 +658,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 	}
 	else
 	{
-		results = [NSDictionary dictionaryWithObject:[NSNumber numberWithUnsignedInt:resultCode] forKey:@"returnCode"];
+		results = [NSDictionary dictionaryWithObject:[NSNumber numberWithInteger:resultCode] forKey:@"returnCode"];
 	}
 
 	return results;
@@ -672,7 +672,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 	NSInteger resultCode      = 0;
 
 	[dict setObject:outNibArray forKey:@"nibs"];
-	[dict setObject:[NSNumber numberWithUnsignedInt:resultCode] forKey:@"returnCode"];
+	[dict setObject:[NSNumber numberWithInteger:resultCode] forKey:@"returnCode"];
 	return dict;
 }
 
@@ -683,7 +683,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 	[menu setFont:[NSFont menuFontOfSize:([[NSUserDefaults standardUserDefaults] integerForKey:@"OakBundleManagerDisambiguateMenuFontSize"] ?: [NSFont smallSystemFontSize])]];
 	LegacyDialogPopupMenuTarget* menuTarget = [[LegacyDialogPopupMenuTarget alloc] init];
 
-	int itemId = 0;
+	NSInteger itemId = 0;
 	char key = '0';
 	NSArray* menuItems = [someOptions objectForKey:@"menuItems"];
 	for(NSDictionary* menuItem in menuItems)
