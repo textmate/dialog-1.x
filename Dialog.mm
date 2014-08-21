@@ -5,12 +5,6 @@
 #import "TMDSemaphore.h"
 #import "TMDChameleon.h"
 
-
-// Apple ought to document this <rdar://4821265>
-@interface NSMethodSignature (Undocumented)
-+(NSMethodSignature*)signatureWithObjCTypes:(const char*)types;
-@end
-
 @interface TMDWindowController : NSObject <NSWindowDelegate>
 {
 	NSWindow* window;
