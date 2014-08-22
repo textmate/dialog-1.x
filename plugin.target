@@ -8,4 +8,4 @@ PLIST_FLAGS        += -d'EXECUTABLE_NAME=Dialog' -d'PRODUCT_NAME=Dialog'
 BUNDLE_EXTENSION    = tmplugin
 LN_FLAGS           += -bundle
 
-FRAMEWORKS          = Cocoa Carbon
+FRAMEWORKS          = Cocoa
