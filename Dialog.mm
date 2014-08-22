@@ -1,4 +1,3 @@
-#import <Carbon/Carbon.h>
 #import <string>
 #import <sys/stat.h>
 #import "Dialog.h"
