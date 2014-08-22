@@ -23,12 +23,12 @@ id read_property_list_from_data (NSData* data)
 	if([data length] == 0)
 		return nil;
 
-	NSString* error = nil;
-	id plist = [NSPropertyListSerialization propertyListFromData:data mutabilityOption:NSPropertyListMutableContainersAndLeaves format:nil errorDescription:&error];
+	NSError* error = nil;
+	id plist = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListMutableContainersAndLeaves format:nil error:&error];
 
 	if(error || !plist)
 	{
-		fprintf(stderr, "%s: %s\n", AppName, [error UTF8String] ?: "unknown error parsing property list");
+		fprintf(stderr, "%s: %s\n", AppName, [[error localizedDescription] UTF8String] ?: "unknown error parsing property list");
 		fwrite([data bytes], [data length], 1, stderr);
 		fprintf(stderr, "\n");
 	}
@@ -55,8 +55,8 @@ id read_property_list_from_file (int fd)
 bool output_property_list (id plist)
 {
 	bool res = false;
-	NSString* error = nil;
-	if(NSData* data = [NSPropertyListSerialization dataFromPropertyList:plist format:NSPropertyListXMLFormat_v1_0 errorDescription:&error])
+	NSError* error = nil;
+	if(NSData* data = [NSPropertyListSerialization dataWithPropertyList:plist format:NSPropertyListXMLFormat_v1_0 options:0 error:&error])
 	{
 		if(NSFileHandle* fh = [NSFileHandle fileHandleWithStandardOutput])
 		{
@@ -66,7 +66,7 @@ bool output_property_list (id plist)
 	}
 	else
 	{
-		fprintf(stderr, "%s: %s\n", AppName, [error UTF8String] ?: "unknown error serializing returned property list");
+		fprintf(stderr, "%s: %s\n", AppName, [[error localizedDescription] UTF8String] ?: "unknown error serializing returned property list");
 		fprintf(stderr, "%s\n", [[plist description] UTF8String]);
 	}
 	return res;
