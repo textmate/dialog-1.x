@@ -404,7 +404,7 @@ id read_property_list_argument(const char* parameters)
 
 int main (int argc, char* argv[])
 {
-	NSAutoreleasePool* pool = [NSAutoreleasePool new];
+	int res = -1;
 
 	extern int optind;
 	extern char* optarg;
@@ -471,7 +471,7 @@ int main (int argc, char* argv[])
 	argc -= optind;
 	argv += optind;
 
-	int res = -1;
+
 
 	if(dialogAction != kShowDialog)
 	{
@@ -482,86 +482,88 @@ int main (int argc, char* argv[])
 			fprintf(stderr, "%s: warning: Ignoring 'quiet' option.\n", AppName);
 	}
 
-	@try {
+	@autoreleasepool {
+		@try {
 
-	switch(dialogAction)
-	{
-		case kShowMenu:
-			if(argc == 0)
-			{
-				id proxy;
-				if(validate_proxy(proxy))
+		switch(dialogAction)
+		{
+			case kShowMenu:
+				if(argc == 0)
 				{
-					if(id plist = read_property_list_argument(parameters))
+					id proxy;
+					if(validate_proxy(proxy))
 					{
-						output_property_list([proxy showMenuWithOptions:plist]);
-					}
-					else
-					{
-						fprintf(stderr, "%s: no property list given\n", AppName);
+						if(id plist = read_property_list_argument(parameters))
+						{
+							output_property_list([proxy showMenuWithOptions:plist]);
+						}
+						else
+						{
+							fprintf(stderr, "%s: no property list given\n", AppName);
+						}
 					}
 				}
-			}
-			else
+				else
+				{
+					usage();
+				}
+				break;
+			case kShowAlert:
+				if(argc == 0)
+				{
+					id proxy;
+					if(validate_proxy(proxy))
+					{
+						id plist = read_property_list_argument(parameters);
+						NSDictionary* output = [proxy showAlertForPath:nil withParameters:plist modal:YES];
+						printf("%d\n", [[output objectForKey:@"buttonClicked"] intValue]);
+					}
+				}
+				else
+				{
+					usage();
+				}
+				break;
+			case kShowDialog:
+			case kAsyncCreate:
 			{
-				usage();
-			}
-			break;
-		case kShowAlert:
-			if(argc == 0)
-			{
-				id proxy;
-				if(validate_proxy(proxy))
+				id initialValues = read_property_list_from_string(defaults);
+				id dynamicClasses = read_property_list_from_string(dynamicClassesPlist);
+
+				if(argc == 1)
 				{
 					id plist = read_property_list_argument(parameters);
-					NSDictionary* output = [proxy showAlertForPath:nil withParameters:plist modal:YES];
-					printf("%d\n", [[output objectForKey:@"buttonClicked"] intValue]);
+					res = contact_server_show_nib(find_nib(argv[0]), plist, initialValues, dynamicClasses, center, modal, quiet, (dialogAction == kAsyncCreate));
 				}
-			}
-			else
-			{
-				usage();
-			}
-			break;
-		case kShowDialog:
-		case kAsyncCreate:
-		{
-			id initialValues = read_property_list_from_string(defaults);
-			id dynamicClasses = read_property_list_from_string(dynamicClassesPlist);
-
-			if(argc == 1)
+				else
+				{
+					usage();
+				}
+			} break;
+			case kAsyncUpdate:
 			{
 				id plist = read_property_list_argument(parameters);
-				res = contact_server_show_nib(find_nib(argv[0]), plist, initialValues, dynamicClasses, center, modal, quiet, (dialogAction == kAsyncCreate));
-			}
-			else
-			{
+				res = contact_server_async_update(token, plist);
+			} break;
+			case kAsyncClose:
+				res = contact_server_async_close(token, false); // false -> generate errors
+				break;
+			case kAsyncWait:
+				res = contact_server_async_wait(token);
+				break;
+			case kAsyncList:
+				res = contact_server_async_list();
+				break;
+			default:
 				usage();
-			}
-		} break;
-		case kAsyncUpdate:
-		{
-			id plist = read_property_list_argument(parameters);
-			res = contact_server_async_update(token, plist);
-		} break;
-		case kAsyncClose:
-			res = contact_server_async_close(token, false); 	// false -> generate errors
-			break;
-		case kAsyncWait:
-			res = contact_server_async_wait(token);
-			break;
-		case kAsyncList:
-			res = contact_server_async_list();
-			break;
-		default:
-			usage();
-			break;
+				break;
+		}
+
+		} @catch(NSException* e) {
+			fprintf(stderr, "%s: %s\n", AppName, [[e reason] UTF8String]);
+		}
+
 	}
 
-	} @catch(NSException* e) {
-		fprintf(stderr, "%s: %s\n", AppName, [[e reason] UTF8String]);
-	}
-
-	[pool release];
 	return res;
 }
