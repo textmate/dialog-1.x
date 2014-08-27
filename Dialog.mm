@@ -17,7 +17,6 @@
 	BOOL isModal;
 	BOOL center;
 	BOOL async;
-//	BOOL didLock;
 	BOOL didCleanup;
 	int token;
 }
@@ -47,18 +46,15 @@ static NSUInteger sNextWindowControllerToken = 1;
 
 	for(TMDWindowController* windowController in sWindowControllers)
 	{
-//		if( [windowController isAsync] )
-		{
-			NSMutableDictionary* nibDict = [NSMutableDictionary dictionary];
-			NSString* nibTitle           = [windowController windowTitle];
+		NSMutableDictionary* nibDict = [NSMutableDictionary dictionary];
+		NSString* nibTitle           = [windowController windowTitle];
 
-			[nibDict setObject:[NSNumber numberWithInt:[windowController token]] forKey:@"token"];
+		[nibDict setObject:[NSNumber numberWithInt:[windowController token]] forKey:@"token"];
 
-			if(nibTitle != nil)
-				[nibDict setObject:nibTitle forKey:@"windowTitle"];
+		if(nibTitle != nil)
+			[nibDict setObject:nibTitle forKey:@"windowTitle"];
 
-			[outNibArray addObject:nibDict];
-		}
+		[outNibArray addObject:nibDict];
 	}
 
 	return outNibArray;
@@ -104,8 +100,6 @@ static NSUInteger sNextWindowControllerToken = 1;
 
 - (void)dealloc
 {
-//	NSLog(@"%s %@ %d", sel_getName(_cmd), self, token);
-
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[super dealloc];
 }
@@ -178,7 +172,6 @@ static NSUInteger sNextWindowControllerToken = 1;
 - (void)windowWillClose:(NSNotification*)aNotification
 {
 	[self wakeClient];
-//	[self cleanupAndRelease:self];
 }
 
 
@@ -376,10 +369,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 			// TODO: When TextMate is capable of running script I/O in it's own thread(s), modal blocking
 			// can go away altogether.
 			if(isModal && window)
-			{
 				[NSApp runModalForWindow:window];
-//				[self cleanupAndRelease:self];
-			}
 		}
 	}
 	else
@@ -402,8 +392,6 @@ static NSUInteger sNextWindowControllerToken = 1;
 
 - (void)dealloc
 {
-//	NSLog(@"%s %@ %d", sel_getName(_cmd), self, token);
-
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
 	for(id object in topLevelObjects)
@@ -609,17 +597,11 @@ static NSUInteger sNextWindowControllerToken = 1;
 		NSLog(@"%s couldn't create nib loader", sel_getName(_cmd));
 	[nibOwner instantiateNib:nib];
 
-//	if(async || (not modal))
-	{
-		output = [NSMutableDictionary dictionaryWithObjectsAndKeys:
-										[NSNumber numberWithUnsignedInt:[nibOwner token]], @"token",
-										[NSNumber numberWithUnsignedInt:0], @"returnCode",
-										nil];
-	}
-	// else
-	// {
-	// 	output = someParameters;
-	// }
+	output = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+									[NSNumber numberWithUnsignedInt:[nibOwner token]], @"token",
+									[NSNumber numberWithUnsignedInt:0], @"returnCode",
+									nil];
+
 	return output;
 }
 
@@ -644,7 +626,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 	TMDWindowController* windowController = [TMDWindowController windowControllerForToken:[token intValue]];
 	int resultCode = -43;
 
-	if((windowController != nil) /*&& [windowController isAsync]*/)
+	if(windowController != nil)
 	{
 		[windowController connectionDidDie:nil];
 		resultCode = 0;
@@ -660,7 +642,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 	int resultCode = -43;
 	id results;
 
-	if((windowController != nil) /*&& [windowController isAsync]*/)
+	if(windowController != nil)
 	{
 		results = [windowController returnResult];
 		resultCode = 0;
