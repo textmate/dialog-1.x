@@ -11,12 +11,6 @@
 +(NSMethodSignature*)signatureWithObjCTypes:(const char*)types;
 @end
 
-@interface Dialog : NSObject <TextMateDialogServerProtocol>
-{
-}
-- (id)initWithPlugInController:(id <TMPlugInController>)aController;
-@end
-
 @interface TMDWindowController : NSObject <NSWindowDelegate>
 {
 	NSWindow* window;
@@ -40,6 +34,162 @@
 - (BOOL)isAsync;
 - (void)wakeClient;
 - (NSMutableDictionary*)returnResult;
+@end
+
+@implementation TMDWindowController
+
+static NSMutableArray* sWindowControllers    = nil;
+static NSUInteger sNextWindowControllerToken = 1;
+
++ (NSArray*)nibDescriptions
+{
+	NSMutableArray* outNibArray = [NSMutableArray array];
+
+	for(TMDWindowController* windowController in sWindowControllers)
+	{
+//		if( [windowController isAsync] )
+		{
+			NSMutableDictionary* nibDict = [NSMutableDictionary dictionary];
+			NSString* nibTitle           = [windowController windowTitle];
+
+			[nibDict setObject:[NSNumber numberWithInt:[windowController token]] forKey:@"token"];
+
+			if(nibTitle != nil)
+				[nibDict setObject:nibTitle forKey:@"windowTitle"];
+
+			[outNibArray addObject:nibDict];
+		}
+	}
+
+	return outNibArray;
+}
+
++ (TMDWindowController*)windowControllerForToken:(int)token
+{
+	TMDWindowController* outLoader = nil;
+
+	for(TMDWindowController* loader in sWindowControllers)
+	{
+		if([loader token] == token)
+		{
+			outLoader = loader;
+			break;
+		}
+	}
+
+	return outLoader;
+}
+
+- (id)init
+{
+	if(self = [super init])
+	{
+		if(sWindowControllers == nil)
+			sWindowControllers = [[NSMutableArray alloc] init];
+
+		token = sNextWindowControllerToken;
+		sNextWindowControllerToken += 1;
+
+		[sWindowControllers addObject:self];
+	}
+	return self;
+}
+
+// Return the result; if there is no result, return the parameters
+- (NSMutableDictionary*)returnResult
+{
+	// override me
+	return nil;
+}
+
+- (void)dealloc
+{
+//	NSLog(@"%s %@ %d", sel_getName(_cmd), self, token);
+
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
+	[super dealloc];
+}
+
+- (BOOL)isAsync
+{
+	return async;
+}
+
+- (int)token
+{
+	return token;
+}
+
+- (NSString*)windowTitle
+{
+	return [window title];
+}
+
+- (void)wakeClient
+{
+	if(isModal)
+		[NSApp stopModal];
+
+	// Post dummy event; the event system sometimes stalls unless we do this after stopModal. See also connectionDidDie: in this file.
+	[NSApp postEvent:[NSEvent otherEventWithType:NSApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:0.0f windowNumber:0 context:nil subtype:0 data1:0 data2:0] atStart:NO];
+
+	TMDSemaphore* semaphore = [TMDSemaphore semaphoreForTokenInt:token];
+	[semaphore stopWaiting];
+}
+
+- (void)setWindow:(NSWindow*)aWindow
+{
+	if(window != aWindow)
+	{
+		[window setDelegate:nil];
+		[window release];
+		window = [aWindow retain];
+		[window setDelegate:self];
+
+		// We own the window, and we will release it. This prevents a potential crash later on.
+		if([window isReleasedWhenClosed])
+		{
+			NSLog(@"warning: Window (%@) should not have released-when-closed bit set. I will clear it for you, but this it crash earlier versions of TextMate.", [window title]);
+			[window setReleasedWhenClosed:NO];
+		}
+	}
+}
+
+- (void)cleanupAndRelease:(id)sender
+{
+	if(didCleanup)
+		return;
+	didCleanup = YES;
+
+	[sWindowControllers removeObject:self];
+
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
+	[self setWindow:nil];
+
+	[self wakeClient];
+	[self performSelector:@selector(delayedRelease:) withObject:self afterDelay:0];
+}
+
+- (void)delayedRelease:(id)anArgument
+{
+	[self autorelease];
+}
+
+- (void)windowWillClose:(NSNotification*)aNotification
+{
+	[self wakeClient];
+//	[self cleanupAndRelease:self];
+}
+
+
+- (void)connectionDidDie:(NSNotification*)aNotification
+{
+	[window orderOut:self];
+	[self cleanupAndRelease:self];
+
+	// post dummy event, since the system has a tendency to stall the next event, after replying to a DO message where the receiver has disappeared, posting this dummy event seems to solve it
+	[NSApp postEvent:[NSEvent otherEventWithType:NSApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:0.0f windowNumber:0 context:nil subtype:0 data1:0 data2:0] atStart:NO];
+}
 @end
 
 @interface TMDNibWindowController : TMDWindowController
@@ -271,162 +421,6 @@
 }
 @end
 
-@implementation TMDWindowController
-
-static NSMutableArray* sWindowControllers    = nil;
-static NSUInteger sNextWindowControllerToken = 1;
-
-+ (NSArray*)nibDescriptions
-{
-	NSMutableArray* outNibArray = [NSMutableArray array];
-
-	for(TMDWindowController* windowController in sWindowControllers)
-	{
-//		if( [windowController isAsync] )
-		{
-			NSMutableDictionary* nibDict = [NSMutableDictionary dictionary];
-			NSString* nibTitle           = [windowController windowTitle];
-
-			[nibDict setObject:[NSNumber numberWithInt:[windowController token]] forKey:@"token"];
-
-			if(nibTitle != nil)
-				[nibDict setObject:nibTitle forKey:@"windowTitle"];
-
-			[outNibArray addObject:nibDict];
-		}
-	}
-
-	return outNibArray;
-}
-
-+ (TMDWindowController*)windowControllerForToken:(int)token
-{
-	TMDWindowController* outLoader = nil;
-
-	for(TMDWindowController* loader in sWindowControllers)
-	{
-		if([loader token] == token)
-		{
-			outLoader = loader;
-			break;
-		}
-	}
-
-	return outLoader;
-}
-
-- (id)init
-{
-	if(self = [super init])
-	{
-		if(sWindowControllers == nil)
-			sWindowControllers = [[NSMutableArray alloc] init];
-
-		token = sNextWindowControllerToken;
-		sNextWindowControllerToken += 1;
-
-		[sWindowControllers addObject:self];
-	}
-	return self;
-}
-
-// Return the result; if there is no result, return the parameters
-- (NSMutableDictionary*)returnResult
-{
-	// override me
-	return nil;
-}
-
-- (void)dealloc
-{
-//	NSLog(@"%s %@ %d", sel_getName(_cmd), self, token);
-
-	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	[super dealloc];
-}
-
-- (BOOL)isAsync
-{
-	return async;
-}
-
-- (int)token
-{
-	return token;
-}
-
-- (NSString*)windowTitle
-{
-	return [window title];
-}
-
-- (void)wakeClient
-{
-	if(isModal)
-		[NSApp stopModal];
-
-	// Post dummy event; the event system sometimes stalls unless we do this after stopModal. See also connectionDidDie: in this file.
-	[NSApp postEvent:[NSEvent otherEventWithType:NSApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:0.0f windowNumber:0 context:nil subtype:0 data1:0 data2:0] atStart:NO];
-
-	TMDSemaphore* semaphore = [TMDSemaphore semaphoreForTokenInt:token];
-	[semaphore stopWaiting];
-}
-
-- (void)setWindow:(NSWindow*)aWindow
-{
-	if(window != aWindow)
-	{
-		[window setDelegate:nil];
-		[window release];
-		window = [aWindow retain];
-		[window setDelegate:self];
-
-		// We own the window, and we will release it. This prevents a potential crash later on.
-		if([window isReleasedWhenClosed])
-		{
-			NSLog(@"warning: Window (%@) should not have released-when-closed bit set. I will clear it for you, but this it crash earlier versions of TextMate.", [window title]);
-			[window setReleasedWhenClosed:NO];
-		}
-	}
-}
-
-- (void)cleanupAndRelease:(id)sender
-{
-	if(didCleanup)
-		return;
-	didCleanup = YES;
-
-	[sWindowControllers removeObject:self];
-
-	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	[self setWindow:nil];
-
-	[self wakeClient];
-	[self performSelector:@selector(delayedRelease:) withObject:self afterDelay:0];
-}
-
-- (void)delayedRelease:(id)anArgument
-{
-	[self autorelease];
-}
-
-- (void)windowWillClose:(NSNotification*)aNotification
-{
-	[self wakeClient];
-//	[self cleanupAndRelease:self];
-}
-
-
-- (void)connectionDidDie:(NSNotification*)aNotification
-{
-	[window orderOut:self];
-	[self cleanupAndRelease:self];
-
-	// post dummy event, since the system has a tendency to stall the next event, after replying to a DO message where the receiver has disappeared, posting this dummy event seems to solve it
-	[NSApp postEvent:[NSEvent otherEventWithType:NSApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:0.0f windowNumber:0 context:nil subtype:0 data1:0 data2:0] atStart:NO];
-}
-@end
-
 @interface NSObject (OakTextView)
 - (NSPoint)positionForWindowUnderCaret;
 @end
@@ -457,6 +451,10 @@ static NSUInteger sNextWindowControllerToken = 1;
 	NSAssert([sender isKindOfClass:[NSMenuItem class]], @"Unexpected sender for menu target");
 	self.selectedIndex = [(NSMenuItem*)sender tag];
 }
+@end
+
+@interface Dialog : NSObject <TextMateDialogServerProtocol>
+- (id)initWithPlugInController:(id <TMPlugInController>)aController;
 @end
 
 @implementation Dialog
