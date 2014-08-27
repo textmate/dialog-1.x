@@ -5,6 +5,33 @@
 #import "TMDSemaphore.h"
 #import "TMDChameleon.h"
 
+// For historical reasons, instantiateNibWithOwner:topLevelObjects: adds an extra retain count to
+// each object in topLevelObjects. If we can, we use the new version instantiateWithOwner:topLevelObjects:
+// (i.e., 10.8 and later), else we fall back to emulating the newer method by manually reducing the
+// retain count. We can do this since we (now) ensure that we have a strong reference to the topLevelOjbects
+// array, so that the objects will not be deallocated or released.
+@interface NSNib (Lion)
+- (BOOL)lionInstantiateWithOwner:(id)owner topLevelObjects:(NSArray**)topLevelObjects;
+@end
+
+@implementation NSNib (Lion)
+- (BOOL)lionInstantiateWithOwner:(id)owner topLevelObjects:(NSArray**)topLevelObjects
+{
+	BOOL res = NO;
+	if([self respondsToSelector:@selector(instantiateWithOwner:topLevelObjects:)])
+	{
+		res = [self instantiateWithOwner:owner topLevelObjects:topLevelObjects];
+	}
+	else
+	{
+		res = [self instantiateNibWithOwner:owner topLevelObjects:topLevelObjects];
+		for(id object in *topLevelObjects)
+			CFRelease((__bridge CFTypeRef)object);
+	}
+	return res;
+}
+@end
+
 @interface TMDWindowController : NSObject <NSWindowDelegate>
 {
 	NSWindow* window;
@@ -14,6 +41,7 @@
 	BOOL didCleanup;
 	int token;
 }
+@property (nonatomic) TMDWindowController* retainedSelf;
 
 // Fetch an existing controller
 + (TMDWindowController*)windowControllerForToken:(int)token;
@@ -81,6 +109,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 		sNextWindowControllerToken += 1;
 
 		[sWindowControllers addObject:self];
+		self.retainedSelf = self;
 	}
 	return self;
 }
@@ -95,7 +124,6 @@ static NSUInteger sNextWindowControllerToken = 1;
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	[super dealloc];
 }
 
 - (BOOL)isAsync
@@ -130,8 +158,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 	if(window != aWindow)
 	{
 		[window setDelegate:nil];
-		[window release];
-		window = [aWindow retain];
+		window = aWindow;
 		[window setDelegate:self];
 
 		// We own the window, and we will release it. This prevents a potential crash later on.
@@ -155,12 +182,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 	[self setWindow:nil];
 
 	[self wakeClient];
-	[self performSelector:@selector(delayedRelease:) withObject:self afterDelay:0];
-}
-
-- (void)delayedRelease:(id)anArgument
-{
-	[self autorelease];
+	[self performSelector:@selector(setRetainedSelf:) withObject:nil afterDelay:0];
 }
 
 - (void)windowWillClose:(NSNotification*)aNotification
@@ -180,10 +202,8 @@ static NSUInteger sNextWindowControllerToken = 1;
 @end
 
 @interface TMDNibWindowController : TMDWindowController
-{
-	NSMutableDictionary* parameters;
-	NSMutableArray* topLevelObjects;
-}
+@property (nonatomic) NSMutableDictionary* parameters;
+@property (nonatomic) NSMutableArray* topLevelObjects;
 
 - (id)initWithParameters:(NSMutableDictionary*)someParameters modal:(BOOL)flag center:(BOOL)shouldCenter aysnc:(BOOL)inAsync;
 - (NSDictionary*)instantiateNib:(NSNib*)aNib;
@@ -198,8 +218,8 @@ static NSUInteger sNextWindowControllerToken = 1;
 {
 	if(self = [super init])
 	{
-		parameters = [someParameters retain];
-		[parameters setObject:self forKey:@"controller"];
+		_parameters = someParameters;
+		[_parameters setObject:self forKey:@"controller"];
 		isModal = flag;
 		center  = shouldCenter;
 		async   = inAsync;
@@ -215,18 +235,17 @@ static NSUInteger sNextWindowControllerToken = 1;
 	if(async)
 	{
 		// Async dialogs return just the results
-		result = [parameters objectForKey:@"result"];
-		[[result retain] autorelease];
+		result = [self.parameters objectForKey:@"result"];
 
-		[parameters removeObjectForKey:@"result"];
+		[self.parameters removeObjectForKey:@"result"];
 
 		if(result == nil)
-			result = [[parameters mutableCopy] autorelease];
+			result = [self.parameters mutableCopy];
 	}
 	else
 	{
 		// Other dialogs return everything
-		result = [[parameters mutableCopy] autorelease];
+		result = [self.parameters mutableCopy];
 	}
 
 	[result removeObjectForKey:@"controller"];
@@ -236,7 +255,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 
 - (void)makeControllersCommitEditing
 {
-	for(id object in topLevelObjects)
+	for(id object in self.topLevelObjects)
 	{
 		if([object respondsToSelector:@selector(commitEditing)])
 			[object commitEditing];
@@ -250,11 +269,11 @@ static NSUInteger sNextWindowControllerToken = 1;
 	if(didCleanup)
 		return;
 
-	[parameters removeObjectForKey:@"controller"];
+	[self.parameters removeObjectForKey:@"controller"];
 	[self makeControllersCommitEditing];
 
 	// if we do not manually unbind, the object in the nib will keep us retained, and thus we will never reach dealloc
-	for(id object in topLevelObjects)
+	for(id object in self.topLevelObjects)
 	{
 		if([object isKindOfClass:[NSObjectController class]])
 			[object unbind:@"contentObject"];
@@ -266,9 +285,9 @@ static NSUInteger sNextWindowControllerToken = 1;
 - (void)performButtonClick:(id)sender
 {
 	if([sender respondsToSelector:@selector(title)])
-		[parameters setObject:[sender title] forKey:@"returnButton"];
+		[self.parameters setObject:[sender title] forKey:@"returnButton"];
 	if([sender respondsToSelector:@selector(tag)])
-		[parameters setObject:[NSNumber numberWithInt:[sender tag]] forKey:@"returnCode"];
+		[self.parameters setObject:[NSNumber numberWithInt:[sender tag]] forKey:@"returnCode"];
 
 	[self wakeClient];
 }
@@ -304,11 +323,11 @@ static NSUInteger sNextWindowControllerToken = 1;
 		NSMutableDictionary* dict = [NSMutableDictionary dictionary];
 		for(size_t i = 2; i < [[invocation methodSignature] numberOfArguments]; ++i)
 		{
-			id arg = nil;
+			__unsafe_unretained id arg = nil;
 			[invocation getArgument:&arg atIndex:i];
 			[dict setObject:(arg ?: @"") forKey:[argNames objectAtIndex:i - 2]];
 		}
-		[parameters setObject:dict forKey:@"result"];
+		[self.parameters setObject:dict forKey:@"result"];
 
 		// unblock the connection thread
 		[self wakeClient];
@@ -325,16 +344,17 @@ static NSUInteger sNextWindowControllerToken = 1;
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(connectionDidDie:) name:NSPortDidBecomeInvalidNotification object:nil];
 
 	BOOL didInstantiate = NO;
+	NSMutableArray* objects;
 	@try {
-	 	didInstantiate = [aNib instantiateNibWithOwner:self topLevelObjects:&topLevelObjects];
+	 	didInstantiate = [aNib lionInstantiateWithOwner:self topLevelObjects:&objects];
 	}
 	@catch(NSException* e) {
 		// our retain count is too high if we reach this branch (<rdar://4803521>) so no RAII idioms for Cocoa, which is why we have the didLock variable, etc.
 		NSLog(@"%s failed to instantiate nib (%@)", sel_getName(_cmd), [e reason]);
 	}
 
-	[topLevelObjects retain];
-	for(id object in topLevelObjects)
+	self.topLevelObjects = objects;
+	for(id object in self.topLevelObjects)
 	{
 		if([object isKindOfClass:[NSWindow class]])
 			[self setWindow:object];
@@ -372,7 +392,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 		[self cleanupAndRelease:self];
 	}
 
-	return parameters;
+	return self.parameters;
 }
 
 // Async param updates
@@ -381,18 +401,12 @@ static NSUInteger sNextWindowControllerToken = 1;
 	NSArray* keys = [updatedParams allKeys];
 
 	for(id key in keys)
-		[parameters setValue:[updatedParams valueForKey:key] forKey:key];
+		[self.parameters setValue:[updatedParams valueForKey:key] forKey:key];
 }
 
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-
-	for(id object in topLevelObjects)
-		[object release];
-	[topLevelObjects release];
-	[parameters release];
-	[super dealloc];
 }
 
 - (void)wakeClient
@@ -436,6 +450,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 @end
 
 @interface Dialog : NSObject <TextMateDialogServerProtocol>
+@property (nonatomic) NSConnection* connection;
 - (id)initWithPlugInController:(id <TMPlugInController>)aController;
 @end
 
@@ -445,11 +460,11 @@ static NSUInteger sNextWindowControllerToken = 1;
 	NSApp = [NSApplication sharedApplication];
 	if(self = [super init])
 	{
-		NSConnection* connection = [NSConnection new];
-		[connection setRootObject:self];
+		_connection = [NSConnection new];
+		[_connection setRootObject:self];
 
 		NSString* portName = [NSString stringWithFormat:@"%@.%d", @"com.macromates.dialog_1", getpid()];
-		if([connection registerName:portName] == NO)
+		if([_connection registerName:portName] == NO)
 			NSLog(@"couldn't setup port: %@", portName), NSBeep();
 		setenv("DIALOG_1_PORT_NAME", [portName UTF8String], 1);
 
@@ -579,7 +594,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 	if(initialValues && [initialValues count])
 		[[NSUserDefaults standardUserDefaults] registerDefaults:initialValues];
 
-	NSNib* nib = [[[NSNib alloc] initWithContentsOfURL:[NSURL fileURLWithPath:aNibPath]] autorelease];
+	NSNib* nib = [[NSNib alloc] initWithContentsOfURL:[NSURL fileURLWithPath:aNibPath]];
 	if(!nib)
 	{
 		NSLog(@"%s failed loading nib: %@", sel_getName(_cmd), aNibPath);
@@ -664,13 +679,13 @@ static NSUInteger sNextWindowControllerToken = 1;
 
 - (id)showMenuWithOptions:(NSDictionary*)someOptions
 {
-	NSMenu* menu = [[[NSMenu alloc] init] autorelease];
+	NSMenu* menu = [NSMenu new];
 	[menu setFont:[NSFont menuFontOfSize:([[NSUserDefaults standardUserDefaults] integerForKey:@"OakBundleManagerDisambiguateMenuFontSize"] ?: [NSFont smallSystemFontSize])]];
-	LegacyDialogPopupMenuTarget* menuTarget = [[[LegacyDialogPopupMenuTarget alloc] init] autorelease];
+	LegacyDialogPopupMenuTarget* menuTarget = [[LegacyDialogPopupMenuTarget alloc] init];
 
 	int itemId = 0;
 	char key = '0';
-	NSArray* menuItems = [[[someOptions objectForKey:@"menuItems"] retain] autorelease];
+	NSArray* menuItems = [someOptions objectForKey:@"menuItems"];
 	for(NSDictionary* menuItem in menuItems)
 	{
 		if([[menuItem objectForKey:@"separator"] intValue])

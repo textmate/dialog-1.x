@@ -74,10 +74,10 @@ bool output_property_list (id plist)
 
 // validate_proxy: return an instance of the TM dialog server proxy object. Return false (and write details to stderr)
 // if the TM dialog server is unavailable or the protocol version doesn't match.
-bool validate_proxy (id & outProxy)
+BOOL validate_proxy (id* outProxy)
 {
-	static bool proxyValid = false;
-	static id proxy = nil;
+	BOOL proxyValid = NO;
+	id proxy = nil;
 
 	// One shot validate -- if it isn't valid now, presumably it won't be ever
 	// (during the very short life of an instance of this tool)
@@ -92,7 +92,7 @@ bool validate_proxy (id & outProxy)
 
 		if([proxy textMateDialogServerProtocolVersion] == TextMateDialogServerProtocolVersion)
 		{
-			proxyValid = true;
+			proxyValid = YES;
 		}
 		else
 		{
@@ -126,7 +126,7 @@ bool validate_proxy (id & outProxy)
 		}
 	}
 
-	outProxy = proxy;
+	*outProxy = proxy;
 	return proxyValid;
 }
 
@@ -140,7 +140,7 @@ int contact_server_async_update (const char* token, NSMutableDictionary* somePar
 	{
 		fprintf(stderr, "%s: no property list given, skipping update\n", AppName);
 	}
-	else if(validate_proxy(proxy))
+	else if(validate_proxy(&proxy))
 	{
 		id result = [proxy updateNib:[NSString stringWithUTF8String:token] withParameters:someParameters];
 		returnCode = [[result objectForKey:@"returnCode"] intValue];
@@ -159,7 +159,7 @@ int contact_server_async_close (const char* token, bool ignoreFailure)
 	id proxy;
 	int returnCode = -1;
 
-	if(validate_proxy(proxy))
+	if(validate_proxy(&proxy))
 	{
 		id result = [proxy closeNib:[NSString stringWithUTF8String:token]];
 		returnCode = [[result objectForKey:@"returnCode"] intValue];
@@ -187,7 +187,7 @@ int contact_server_async_wait (const char* token)
 	id proxy;
 	int returnCode = -1;
 
-	if(validate_proxy(proxy))
+	if(validate_proxy(&proxy))
 	{
 		id result;
 		TMDSemaphore* semaphore = [TMDSemaphore semaphoreForTokenString:token];
@@ -223,7 +223,7 @@ int contact_server_async_list ()
 	id proxy;
 	int returnCode = -1;
 
-	if(validate_proxy(proxy))
+	if(validate_proxy(&proxy))
 	{
 		id result = [proxy listNibTokens];
 		returnCode = [[result objectForKey:@"returnCode"] intValue];
@@ -258,7 +258,7 @@ int contact_server_show_nib (std::string nibName, NSMutableDictionary* someParam
 	int res = -1;
 	id proxy;
 
-	if(validate_proxy(proxy))
+	if(validate_proxy(&proxy))
 	{
 		NSString* aNibPath = [NSString stringWithUTF8String:nibName.c_str()];
 		NSDictionary* parameters = (NSDictionary*)[proxy showNib:aNibPath withParameters:(someParameters ?: [NSMutableDictionary dictionary]) andInitialValues:initialValues dynamicClasses:dynamicClasses modal:modal center:center async:async];
@@ -281,7 +281,7 @@ int contact_server_show_nib (std::string nibName, NSMutableDictionary* someParam
 			else if(modal)
 			{
 				// Modal: the window has already been ordered out; retrieve the results and close it.
-				if(validate_proxy(proxy) && not quiet)
+				if(validate_proxy(&proxy) && not quiet)
 				{
 					id result = [proxy retrieveNibResults:[NSString stringWithUTF8String:token]];
 					output_property_list(result);
@@ -491,7 +491,7 @@ int main (int argc, char* argv[])
 				if(argc == 0)
 				{
 					id proxy;
-					if(validate_proxy(proxy))
+					if(validate_proxy(&proxy))
 					{
 						if(id plist = read_property_list_argument(parameters))
 						{
@@ -512,7 +512,7 @@ int main (int argc, char* argv[])
 				if(argc == 0)
 				{
 					id proxy;
-					if(validate_proxy(proxy))
+					if(validate_proxy(&proxy))
 					{
 						id plist = read_property_list_argument(parameters);
 						NSDictionary* output = [proxy showAlertForPath:nil withParameters:plist modal:YES];
