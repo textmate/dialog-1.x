@@ -32,7 +32,7 @@
 
 + (TMDSemaphore*)semaphoreWithName:(NSString*)name
 {
-	return [[[TMDSemaphore alloc] initWithName:name] autorelease];
+	return [[TMDSemaphore alloc] initWithName:name];
 }
 
 - (id)initWithName:(NSString*)inName;
@@ -58,8 +58,6 @@
 		sem_close(semaphore);
 		sem_unlink([name UTF8String]);
 	}
-	[name release];
-	[super dealloc];
 }
 
 - (void)wait
