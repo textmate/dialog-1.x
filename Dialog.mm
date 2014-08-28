@@ -71,7 +71,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 		NSMutableDictionary* nibDict = [NSMutableDictionary dictionary];
 		NSString* nibTitle           = [windowController windowTitle];
 
-		[nibDict setObject:[NSNumber numberWithInt:[windowController token]] forKey:@"token"];
+		[nibDict setObject:@([windowController token]) forKey:@"token"];
 
 		if(nibTitle != nil)
 			[nibDict setObject:nibTitle forKey:@"windowTitle"];
@@ -219,7 +219,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 	if(self = [super init])
 	{
 		_parameters = someParameters;
-		[_parameters setObject:self forKey:@"controller"];
+		_parameters[@"controller"] = self;
 		isModal = flag;
 		center  = shouldCenter;
 		async   = inAsync;
@@ -235,7 +235,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 	if(async)
 	{
 		// Async dialogs return just the results
-		result = [self.parameters objectForKey:@"result"];
+		result = self.parameters[@"result"];
 
 		[self.parameters removeObjectForKey:@"result"];
 
@@ -285,9 +285,9 @@ static NSUInteger sNextWindowControllerToken = 1;
 - (void)performButtonClick:(id)sender
 {
 	if([sender respondsToSelector:@selector(title)])
-		[self.parameters setObject:[sender title] forKey:@"returnButton"];
+		self.parameters[@"returnButton"] = [sender title];
 	if([sender respondsToSelector:@selector(tag)])
-		[self.parameters setObject:[NSNumber numberWithInt:[sender tag]] forKey:@"returnCode"];
+		self.parameters[@"returnCode"] = @([sender tag]);
 
 	[self wakeClient];
 }
@@ -325,9 +325,9 @@ static NSUInteger sNextWindowControllerToken = 1;
 		{
 			__unsafe_unretained id arg = nil;
 			[invocation getArgument:&arg atIndex:i];
-			[dict setObject:(arg ?: @"") forKey:[argNames objectAtIndex:i - 2]];
+			dict[[argNames objectAtIndex:i - 2]] = arg ?: @"";
 		}
-		[self.parameters setObject:dict forKey:@"result"];
+		self.parameters[@"result"] = dict;
 
 		// unblock the connection thread
 		[self wakeClient];
@@ -583,8 +583,6 @@ static NSUInteger sNextWindowControllerToken = 1;
 	for(id key in [dynamicClasses allKeys])
 		[TMDChameleon createSubclassNamed:key withValues:[dynamicClasses objectForKey:key]];
 
-	id output;
-
 	if(![[NSFileManager defaultManager] fileExistsAtPath:aNibPath])
 	{
 		NSLog(@"%s nib file not found: %@", sel_getName(_cmd), aNibPath);
@@ -606,12 +604,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 		NSLog(@"%s couldn't create nib loader", sel_getName(_cmd));
 	[nibOwner instantiateNib:nib];
 
-	output = [NSMutableDictionary dictionaryWithObjectsAndKeys:
-									[NSNumber numberWithUnsignedInt:[nibOwner token]], @"token",
-									[NSNumber numberWithUnsignedInt:0], @"returnCode",
-									nil];
-
-	return output;
+	return @{ @"token" : @([nibOwner token]), @"returnCode" : @0 };
 }
 
 // Async updates of parameters
@@ -626,7 +619,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 		resultCode = 0;
 	}
 
-	return [NSDictionary dictionaryWithObject:[NSNumber numberWithInteger:resultCode] forKey:@"returnCode"];
+	return @{ @"returnCode" : @(resultCode) };
 }
 
 // Async close
@@ -641,7 +634,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 		resultCode = 0;
 	}
 
-	return [NSDictionary dictionaryWithObject:[NSNumber numberWithInteger:resultCode] forKey:@"returnCode"];
+	return @{ @"returnCode" : @(resultCode) };
 }
 
 // Async get results
@@ -658,7 +651,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 	}
 	else
 	{
-		results = [NSDictionary dictionaryWithObject:[NSNumber numberWithInteger:resultCode] forKey:@"returnCode"];
+		results = @{ @"returnCode" : @(resultCode) };
 	}
 
 	return results;
@@ -667,13 +660,8 @@ static NSUInteger sNextWindowControllerToken = 1;
 // Async list
 - (id)listNibTokens
 {
-	NSMutableDictionary* dict = [NSMutableDictionary dictionary];
-	NSArray* outNibArray      = [TMDWindowController nibDescriptions];
-	NSInteger resultCode      = 0;
-
-	[dict setObject:outNibArray forKey:@"nibs"];
-	[dict setObject:[NSNumber numberWithInteger:resultCode] forKey:@"returnCode"];
-	return dict;
+	NSArray* outNibArray = [TMDWindowController nibDescriptions];
+	return @{ @"nibs" : outNibArray, @"returnCode" : @0 };
 }
 
 
@@ -710,8 +698,8 @@ static NSUInteger sNextWindowControllerToken = 1;
 
 	if([menu popUpMenuPositioningItem:nil atLocation:pos inView:nil] && menuTarget.selectedIndex != NSNotFound)
 	{
-		[selectedItem setObject:[NSNumber numberWithInteger:menuTarget.selectedIndex] forKey:@"selectedIndex"];
-		[selectedItem setObject:[menuItems objectAtIndex:menuTarget.selectedIndex] forKey:@"selectedMenuItem"];
+		selectedItem[@"selectedIndex"]    = @(menuTarget.selectedIndex);
+		selectedItem[@"selectedMenuItem"] = [menuItems objectAtIndex:menuTarget.selectedIndex];
 	}
 
 	return selectedItem;
