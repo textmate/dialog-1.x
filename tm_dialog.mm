@@ -81,7 +81,7 @@ BOOL validate_proxy (id* outProxy)
 
 	// One shot validate -- if it isn't valid now, presumably it won't be ever
 	// (during the very short life of an instance of this tool)
-	if(not proxyValid)
+	if(!proxyValid)
 	{
 		NSString* portName = @"TextMate dialog server";
 		if(char const* var = getenv("DIALOG_1_PORT_NAME"))
@@ -241,7 +241,7 @@ int contact_server_async_list ()
 				const char* windowTitleC    = "<no title>";
 				int windowToken             = [[nib objectForKey:@"token"] intValue];
 
-				if(windowTitleString != nil && not [windowTitleString isEqualToString:@""])
+				if(windowTitleString != nil && ![windowTitleString isEqualToString:@""])
 					windowTitleC = [windowTitleString UTF8String];
 
 				fprintf(stdout, "%d (%s)\n", windowToken, windowTitleC);
@@ -281,7 +281,7 @@ int contact_server_show_nib (std::string nibName, NSMutableDictionary* someParam
 			else if(modal)
 			{
 				// Modal: the window has already been ordered out; retrieve the results and close it.
-				if(validate_proxy(&proxy) && not quiet)
+				if(validate_proxy(&proxy) && !quiet)
 				{
 					id result = [proxy retrieveNibResults:[NSString stringWithUTF8String:token]];
 					output_property_list(result);
@@ -296,7 +296,7 @@ int contact_server_show_nib (std::string nibName, NSMutableDictionary* someParam
 				// until the task is killed. Wait until something happens.
 				res = contact_server_async_wait(token);
 
-				if(not quiet)
+				if(!quiet)
 					output_property_list(parameters);
 
 				contact_server_async_close(token, false);	// false -> log errors
