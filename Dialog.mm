@@ -339,7 +339,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 
 - (NSDictionary*)instantiateNib:(NSNib*)aNib
 {
-	if(not async)
+	if(!async)
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(connectionDidDie:) name:NSPortDidBecomeInvalidNotification object:nil];
 
 	BOOL didInstantiate = NO;
@@ -520,8 +520,8 @@ static NSUInteger sNextWindowControllerToken = 1;
 		}
 	}
 
-	// Show the alert
-	if(not modal)
+	// Show alert
+	if(!modal)
 	{
 #if 1
 		// Not supported yet; needs same infrastructure as will be required for nib-based sheets.
