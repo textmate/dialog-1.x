@@ -521,59 +521,9 @@ static NSUInteger sNextWindowControllerToken = 1;
 	}
 
 	// Show alert
-	if(!modal)
-	{
-#if 1
-		// Not supported yet; needs same infrastructure as will be required for nib-based sheets.
-		[NSException raise:@"NotSupportedYet" format:@"Sheet alerts not yet supported."];
-#else
-		// Window-modal (sheet).NSWindowController
-		// Find the window corresponding to the given path
+	NSInteger alertResult = ([alert runModal] - NSAlertFirstButtonReturn);
+	resultDict = [NSDictionary dictionaryWithObject:[NSNumber numberWithInteger:alertResult] forKey:@"buttonClicked"];
 
-		NSArray* windows = [NSApp windows];
-		NSWindow* chosenWindow = nil;
-
-		for(NSWindow * window in windows)
-		{
-			OakDocumentController*	documentController = [window controller];
-			if([documentController isKindOfClass:[OakDocumentController class]])
-			{
-				if(filePath == nil)
-				{
-					// Take first visible document window
-					if( [window isVisible] )
-					{
-						chosenWindow = window;
-						break;
-					}
-				}
-				else
-				{
-					// Find given document window
-					// TODO: documentWithContentsOfFile may be a better way to do this
-					// FIXME: standardize paths
-					if([[documentController->textDocument filename] isEqualToString:filePath])
-					{
-						chosenWindow = window;
-						break;
-					}
-				}
-			}
-		}
-
-		// Fall back to modal
-		if(chosenWindow == nil)
-		{
-			modal = YES;
-		}
-#endif
-	}
-
-	if(modal)
-	{
-		NSInteger alertResult = ([alert runModal] - NSAlertFirstButtonReturn);
-		resultDict = [NSDictionary dictionaryWithObject:[NSNumber numberWithInteger:alertResult] forKey:@"buttonClicked"];
-	}
 	return resultDict;
 }
 
