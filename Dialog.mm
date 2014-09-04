@@ -644,14 +644,8 @@ static NSUInteger sNextWindowControllerToken = 1;
 	id results;
 
 	if(windowController != nil)
-	{
 		results = [windowController returnResult];
-		resultCode = 0;
-	}
-	else
-	{
-		results = @{ @"returnCode" : @(resultCode) };
-	}
+	else	results = @{ @"returnCode" : @(resultCode) };
 
 	return results;
 }
