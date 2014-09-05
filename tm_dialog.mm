@@ -306,9 +306,9 @@ int contact_server_show_nib (std::string nibName, NSMutableDictionary* someParam
 	return res;
 }
 
-void usage ()
+void usage (FILE* io = stderr)
 {
-	fprintf(stderr,
+	fprintf(io,
 		"%1$s %2$.1f (" COMPILE_DATE " revision %3$zu)\n"
 		"Usage (dialog): %1$s [-cdnmqp] nib_file\n"
 		"Usage (window): %1$s [-cdnpaxts] nib_file\n"
@@ -432,6 +432,7 @@ int main (int argc, char* argv[])
 		{ "update-window",  required_argument,   0,     't'   },
 		{ "wait-for-input", required_argument,   0,     'w'   },
 		{ "list-windows",   no_argument,         0,     'l'   },
+		{ "help",           no_argument,         0,     'h'   },
 		{ 0,                0,                   0,     0     }
 	};
 
@@ -444,7 +445,7 @@ int main (int argc, char* argv[])
 	DialogAction dialogAction = kShowDialog;
 
 	setprogname(AppName); // when called from tm_dialog2 (via execv()) our getprogname is wrong, which is used by getopt_long().
-	while((ch = getopt_long(argc, argv, "eacd:mn:p:quax:t:w:l", longopts, NULL)) != -1)
+	while((ch = getopt_long(argc, argv, "eacd:mn:p:quax:t:w:lh", longopts, NULL)) != -1)
 	{
 		switch(ch)
 		{
@@ -461,6 +462,7 @@ int main (int argc, char* argv[])
 			case 't':   dialogAction = kAsyncUpdate; token = optarg; break;
 			case 'w':   dialogAction = kAsyncWait; token = optarg;   break;
 			case 'l':   dialogAction = kAsyncList;    break;
+			case 'h':   usage(stdout);                return EX_OK;
 			default:    usage();                      return EX_USAGE;
 		}
 	}
