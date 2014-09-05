@@ -401,7 +401,7 @@ id read_property_list_argument(const char* parameters)
 
 int main (int argc, char* argv[])
 {
-	int res = -1;
+	int res = EX_USAGE;
 
 	extern int optind;
 	extern char* optarg;
@@ -461,7 +461,7 @@ int main (int argc, char* argv[])
 			case 't':   dialogAction = kAsyncUpdate; token = optarg; break;
 			case 'w':   dialogAction = kAsyncWait; token = optarg;   break;
 			case 'l':   dialogAction = kAsyncList;    break;
-			default:    usage();                      return 1;
+			default:    usage();                      return EX_USAGE;
 		}
 	}
 
@@ -493,6 +493,7 @@ int main (int argc, char* argv[])
 						if(id plist = read_property_list_argument(parameters))
 						{
 							output_property_list([proxy showMenuWithOptions:plist]);
+							res = EX_OK;
 						}
 						else
 						{
@@ -514,6 +515,7 @@ int main (int argc, char* argv[])
 						id plist = read_property_list_argument(parameters);
 						NSDictionary* output = [proxy showAlertForPath:nil withParameters:plist modal:YES];
 						printf("%d\n", [[output objectForKey:@"buttonClicked"] intValue]);
+						res = EX_OK;
 					}
 				}
 				else
