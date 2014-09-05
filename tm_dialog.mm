@@ -310,6 +310,12 @@ void usage (FILE* io = stderr)
 {
 	fprintf(io,
 		"%1$s %2$.1f (" COMPILE_DATE " revision %3$zu)\n"
+		"\n"
+		"  *******************************\n"
+		"  * This version is deprecated. *\n"
+		"  * Instead run: \"$DIALOG\" help *\n"
+		"  *******************************\n"
+		"\n"
 		"Usage (dialog): %1$s [-cdnmqp] nib_file\n"
 		"Usage (window): %1$s [-cdnpaxts] nib_file\n"
 		"Usage (alert): %1$s [-p] -e [-i|-c|-w]\n"
