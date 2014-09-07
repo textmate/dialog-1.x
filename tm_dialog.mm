@@ -76,8 +76,8 @@ bool output_property_list (id plist)
 // if the TM dialog server is unavailable or the protocol version doesn't match.
 BOOL validate_proxy (id* outProxy)
 {
-	BOOL proxyValid = NO;
-	id proxy = nil;
+	static BOOL proxyValid = NO;
+	static id proxy = nil;
 
 	// One shot validate -- if it isn't valid now, presumably it won't be ever
 	// (during the very short life of an instance of this tool)
