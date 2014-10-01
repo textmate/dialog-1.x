@@ -611,7 +611,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 - (id)showMenuWithOptions:(NSDictionary*)someOptions
 {
 	NSMenu* menu = [NSMenu new];
-	[menu setFont:[NSFont menuFontOfSize:([[NSUserDefaults standardUserDefaults] integerForKey:@"OakBundleManagerDisambiguateMenuFontSize"] ?: [NSFont smallSystemFontSize])]];
+	[menu setFont:[NSFont menuFontOfSize:([[NSUserDefaults standardUserDefaults] integerForKey:@"OakBundleManagerDisambiguateMenuFontSize"] ?: 11)]];
 	LegacyDialogPopupMenuTarget* menuTarget = [[LegacyDialogPopupMenuTarget alloc] init];
 
 	NSInteger itemId = 0;
