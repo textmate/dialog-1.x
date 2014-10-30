@@ -16,7 +16,6 @@
 
 static char const* const AppName = "tm_dialog";
 static double const AppVersion   = 1.0;
-static size_t const AppRevision  = APP_REVISION;
 
 id read_property_list_from_data (NSData* data)
 {
@@ -309,7 +308,7 @@ int contact_server_show_nib (std::string nibName, NSMutableDictionary* someParam
 void usage (FILE* io = stderr)
 {
 	fprintf(io,
-		"%1$s %2$.1f (" COMPILE_DATE " revision %3$zu)\n"
+		"%1$s %2$.1f (" COMPILE_DATE ")\n"
 		"\n"
 		"  *******************************\n"
 		"  * This version is deprecated. *\n"
@@ -350,7 +349,7 @@ void usage (FILE* io = stderr)
 		"Otherwise, TextMate's UI thread will hang, waiting for your command to complete.\n"
 		"You can recover from such a hang by killing the tm_dialog process in Terminal.\n"
 		"\n"
-		"", AppName, AppVersion, AppRevision);
+		"", AppName, AppVersion);
 }
 
 std::string find_nib (std::string nibName)
