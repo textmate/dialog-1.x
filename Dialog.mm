@@ -509,12 +509,16 @@ static NSUInteger sNextWindowControllerToken = 1;
 	if(initialValues && [initialValues count])
 		[[NSUserDefaults standardUserDefaults] registerDefaults:initialValues];
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 	NSNib* nib = [[NSNib alloc] initWithContentsOfURL:[NSURL fileURLWithPath:aNibPath]];
+
 	if(!nib)
 	{
 		NSLog(@"%s failed loading nib: %@", sel_getName(_cmd), aNibPath);
 		return nil;
 	}
+#pragma clang diagnostic pop
 
 	TMDNibWindowController* nibOwner = [[TMDNibWindowController alloc] initWithParameters:someParameters modal:modal center:shouldCenter aysnc:async];
 	if(!nibOwner)
