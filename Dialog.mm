@@ -319,6 +319,13 @@ static NSUInteger sNextWindowControllerToken = 1;
 	NSMutableArray* objects;
 
 	didInstantiate = [aNib instantiateWithOwner:self topLevelObjects:&objects];
+	if(!didInstantiate)
+	{
+		NSLog(@"%s failed to instantiate nib.", sel_getName(_cmd));
+		[self cleanupAndRelease:self];
+		return self.parameters;
+	}
+
 
 	self.topLevelObjects = objects;
 	for(id object in self.topLevelObjects)
