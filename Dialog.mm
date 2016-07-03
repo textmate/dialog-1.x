@@ -348,16 +348,13 @@ static NSUInteger sNextWindowControllerToken = 1;
 			}
 		}
 
-		if(window != nil)
-		{
-			// Show the window
-			[window makeKeyAndOrderFront:self];
+		// Show the window
+		[window makeKeyAndOrderFront:self];
 
-			// TODO: When TextMate is capable of running script I/O in it's own thread(s), modal blocking
-			// can go away altogether.
-			if(isModal && window)
-				[NSApp runModalForWindow:window];
-		}
+		// TODO: When TextMate is capable of running script I/O in it's own thread(s), modal blocking
+		// can go away altogether.
+		if(isModal)
+			[NSApp runModalForWindow:window];
 	}
 	else
 	{
