@@ -319,6 +319,12 @@ static NSUInteger sNextWindowControllerToken = 1;
 	NSMutableArray* objects;
 
 	didInstantiate = [aNib instantiateWithOwner:self topLevelObjects:&objects];
+	if(!didInstantiate) {
+		NSLog(@"%s failed to instantiate nib.", sel_getName(_cmd));
+		[self cleanupAndRelease:self];
+		return self.parameters;
+	}
+
 
 	self.topLevelObjects = objects;
 	for(id object in self.topLevelObjects)
@@ -342,16 +348,13 @@ static NSUInteger sNextWindowControllerToken = 1;
 			}
 		}
 
-		if(window != nil)
-		{
-			// Show the window
-			[window makeKeyAndOrderFront:self];
+		// Show the window
+		[window makeKeyAndOrderFront:self];
 
-			// TODO: When TextMate is capable of running script I/O in it's own thread(s), modal blocking
-			// can go away altogether.
-			if(isModal && window)
-				[NSApp runModalForWindow:window];
-		}
+		// TODO: When TextMate is capable of running script I/O in it's own thread(s), modal blocking
+		// can go away altogether.
+		if(isModal)
+			[NSApp runModalForWindow:window];
 	}
 	else
 	{
@@ -509,16 +512,19 @@ static NSUInteger sNextWindowControllerToken = 1;
 	if(initialValues && [initialValues count])
 		[[NSUserDefaults standardUserDefaults] registerDefaults:initialValues];
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-	NSNib* nib = [[NSNib alloc] initWithContentsOfURL:[NSURL fileURLWithPath:aNibPath]];
+	NSData* nibData;
+	if([[NSWorkspace sharedWorkspace] isFilePackageAtPath:aNibPath])
+		nibData = [NSData dataWithContentsOfFile:[aNibPath stringByAppendingPathComponent:@"keyedobjects.nib"]];
+	else	nibData = [NSData dataWithContentsOfFile:aNibPath];
+
+
+	NSNib* nib = [[NSNib alloc] initWithNibData:nibData bundle:nil];
 
 	if(!nib)
 	{
-		NSLog(@"%s failed loading nib: %@", sel_getName(_cmd), aNibPath);
+		NSLog(@"%s failed loading nib: %@. If you are using an .xib file, it must be compiled.", sel_getName(_cmd), aNibPath);
 		return nil;
 	}
-#pragma clang diagnostic pop
 
 	TMDNibWindowController* nibOwner = [[TMDNibWindowController alloc] initWithParameters:someParameters modal:modal center:shouldCenter aysnc:async];
 	if(!nibOwner)
