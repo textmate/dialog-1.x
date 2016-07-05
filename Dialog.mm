@@ -439,12 +439,8 @@ static NSUInteger sNextWindowControllerToken = 1;
 			NSLog(@"couldn't setup port: %@", portName), NSBeep();
 		setenv("DIALOG_1_PORT_NAME", [portName UTF8String], 1);
 
-		if(NSString* path = [[NSBundle bundleForClass:[self class]] pathForResource:@"tm_dialog" ofType:nil]) {
-			if (!getenv("DIALOG"))
-				setenv("DIALOG", [path UTF8String], 1);
-			else
-				setenv("DIALOG_1", [path UTF8String], 1);
-		}
+		if(NSString* path = [[NSBundle bundleForClass:[self class]] pathForResource:@"tm_dialog" ofType:nil])
+			setenv(getenv("DIALOG") ? "DIALOG_1" : "DIALOG", [path UTF8String], 1);
 	}
 	return self;
 }
