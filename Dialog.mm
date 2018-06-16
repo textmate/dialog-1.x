@@ -119,7 +119,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 		[NSApp stopModal];
 
 	// Post dummy event; the event system sometimes stalls unless we do this after stopModal. See also connectionDidDie: in this file.
-	[NSApp postEvent:[NSEvent otherEventWithType:NSApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:0 windowNumber:0 context:nil subtype:0 data1:0 data2:0] atStart:NO];
+	[NSApp postEvent:[NSEvent otherEventWithType:NSEventTypeApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:0 windowNumber:0 context:nil subtype:0 data1:0 data2:0] atStart:NO];
 
 	TMDSemaphore* semaphore = [TMDSemaphore semaphoreForTokenInt:token];
 	[semaphore stopWaiting];
@@ -169,7 +169,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 	[self cleanupAndRelease:self];
 
 	// post dummy event, since the system has a tendency to stall the next event, after replying to a DO message where the receiver has disappeared, posting this dummy event seems to solve it
-	[NSApp postEvent:[NSEvent otherEventWithType:NSApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:0 windowNumber:0 context:nil subtype:0 data1:0 data2:0] atStart:NO];
+	[NSApp postEvent:[NSEvent otherEventWithType:NSEventTypeApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:0 windowNumber:0 context:nil subtype:0 data1:0 data2:0] atStart:NO];
 }
 @end
 
@@ -453,7 +453,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 // filePath: find the window with this path, and create a sheet on it. If we can't find one, may go app-modal.
 - (id)showAlertForPath:(NSString*)filePath withParameters:(NSDictionary*)parameters modal:(BOOL)modal
 {
-	NSAlertStyle   alertStyle = NSInformationalAlertStyle;
+	NSAlertStyle   alertStyle = NSAlertStyleInformational;
 	NSAlert*       alert;
 	NSDictionary*  resultDict = nil;
 	NSArray*       buttonTitles = [parameters objectForKey:@"buttonTitles"];
@@ -462,11 +462,11 @@ static NSUInteger sNextWindowControllerToken = 1;
 	alert = [NSAlert new];
 
 	if([alertStyleString isEqualToString:@"warning"])
-		alertStyle = NSWarningAlertStyle;
+		alertStyle = NSAlertStyleWarning;
 	else if([alertStyleString isEqualToString:@"critical"])
-		alertStyle = NSCriticalAlertStyle;
+		alertStyle = NSAlertStyleCritical;
 	else if([alertStyleString isEqualToString:@"informational"])
-		alertStyle = NSInformationalAlertStyle;
+		alertStyle = NSAlertStyleInformational;
 
 	[alert setAlertStyle:alertStyle];
 	[alert setMessageText:[parameters objectForKey:@"messageTitle"]];
