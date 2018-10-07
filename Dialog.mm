@@ -528,7 +528,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 		NSLog(@"%s couldn't create nib loader", sel_getName(_cmd));
 	[nibOwner instantiateNib:nib];
 
-	return @{ @"token" : @([nibOwner token]), @"returnCode" : @0 };
+	return @{ @"token": @([nibOwner token]), @"returnCode": @0 };
 }
 
 // Async updates of parameters
@@ -543,7 +543,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 		resultCode = 0;
 	}
 
-	return @{ @"returnCode" : @(resultCode) };
+	return @{ @"returnCode": @(resultCode) };
 }
 
 // Async close
@@ -558,7 +558,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 		resultCode = 0;
 	}
 
-	return @{ @"returnCode" : @(resultCode) };
+	return @{ @"returnCode": @(resultCode) };
 }
 
 // Async get results
@@ -570,7 +570,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 
 	if(windowController != nil)
 		results = [windowController returnResult];
-	else	results = @{ @"returnCode" : @(resultCode) };
+	else	results = @{ @"returnCode": @(resultCode) };
 
 	return results;
 }
@@ -579,7 +579,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 - (id)listNibTokens
 {
 	NSArray* outNibArray = [TMDWindowController nibDescriptions];
-	return @{ @"nibs" : outNibArray, @"returnCode" : @0 };
+	return @{ @"nibs": outNibArray, @"returnCode": @0 };
 }
 
 
