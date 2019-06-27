@@ -308,7 +308,7 @@ int contact_server_show_nib (std::string nibName, NSMutableDictionary* someParam
 void usage (FILE* io = stderr)
 {
 	fprintf(io,
-		"%1$s %2$.1f (" COMPILE_DATE ")\n"
+		"%1$s %2$.1f (" __DATE__ ")\n"
 		"\n"
 		"  *******************************\n"
 		"  * This version is deprecated. *\n"
