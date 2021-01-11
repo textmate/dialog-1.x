@@ -95,7 +95,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 
 - (void)dealloc
 {
-	[[NSNotificationCenter defaultCenter] removeObserver:self];
+	[NSNotificationCenter.defaultCenter removeObserver:self];
 }
 
 - (BOOL)isAsync
@@ -150,7 +150,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 
 	[sWindowControllers removeObject:self];
 
-	[[NSNotificationCenter defaultCenter] removeObserver:self];
+	[NSNotificationCenter.defaultCenter removeObserver:self];
 	[self setWindow:nil];
 
 	[self wakeClient];
@@ -233,7 +233,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 			[object commitEditing];
 	}
 
-	[[NSUserDefaults standardUserDefaults] synchronize];
+	[NSUserDefaults.standardUserDefaults synchronize];
 }
 
 - (void)cleanupAndRelease:(id)sender
@@ -313,7 +313,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 - (NSDictionary*)instantiateNib:(NSNib*)aNib
 {
 	if(!async)
-		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(connectionDidDie:) name:NSPortDidBecomeInvalidNotification object:nil];
+		[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(connectionDidDie:) name:NSPortDidBecomeInvalidNotification object:nil];
 
 	BOOL didInstantiate = NO;
 	NSMutableArray* objects;
@@ -377,7 +377,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 
 - (void)dealloc
 {
-	[[NSNotificationCenter defaultCenter] removeObserver:self];
+	[NSNotificationCenter.defaultCenter removeObserver:self];
 }
 
 - (void)wakeClient
@@ -428,7 +428,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 @implementation Dialog
 - (id)initWithPlugInController:(id <TMPlugInController>)aController
 {
-	NSApp = [NSApplication sharedApplication];
+	NSApp = NSApplication.sharedApplication;
 	if(self = [super init])
 	{
 		_connection = [NSConnection new];
@@ -500,18 +500,18 @@ static NSUInteger sNextWindowControllerToken = 1;
 	for(id key in [dynamicClasses allKeys])
 		[TMDChameleon createSubclassNamed:key withValues:[dynamicClasses objectForKey:key]];
 
-	if(![[NSFileManager defaultManager] fileExistsAtPath:aNibPath])
+	if(![NSFileManager.defaultManager fileExistsAtPath:aNibPath])
 	{
 		NSLog(@"%s nib file not found: %@", sel_getName(_cmd), aNibPath);
 		return nil;
 	}
 
 	if(initialValues && [initialValues count])
-		[[NSUserDefaults standardUserDefaults] registerDefaults:initialValues];
+		[NSUserDefaults.standardUserDefaults registerDefaults:initialValues];
 
 	NSData* nibData;
 	NSString* keyedObjectsNibPath = [aNibPath stringByAppendingPathComponent:@"keyedobjects.nib"];
-	if([[NSFileManager defaultManager] fileExistsAtPath:keyedObjectsNibPath])
+	if([NSFileManager.defaultManager fileExistsAtPath:keyedObjectsNibPath])
 		nibData = [NSData dataWithContentsOfFile:keyedObjectsNibPath];
 	else	nibData = [NSData dataWithContentsOfFile:aNibPath];
 
@@ -586,7 +586,7 @@ static NSUInteger sNextWindowControllerToken = 1;
 - (id)showMenuWithOptions:(NSDictionary*)someOptions
 {
 	NSMenu* menu = [NSMenu new];
-	[menu setFont:[NSFont menuFontOfSize:([[NSUserDefaults standardUserDefaults] integerForKey:@"OakBundleManagerDisambiguateMenuFontSize"] ?: 11)]];
+	[menu setFont:[NSFont menuFontOfSize:([NSUserDefaults.standardUserDefaults integerForKey:@"OakBundleManagerDisambiguateMenuFontSize"] ?: 11)]];
 	LegacyDialogPopupMenuTarget* menuTarget = [[LegacyDialogPopupMenuTarget alloc] init];
 
 	NSInteger itemId = 0;
