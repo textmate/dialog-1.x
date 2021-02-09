@@ -1,4 +1,0 @@
-TARGET_NAME   = tm_dialog
-SOURCES       = tm_dialog.mm
-FRAMEWORKS    = Foundation
-
