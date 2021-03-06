@@ -15,7 +15,62 @@
 #import "Dialog.h"
 
 static char const* const AppName    = "tm_dialog";
-static char const* const AppVersion = "1.0";
+static char const* const AppVersion = "1.1";
+
+static char const* csv_escape_string (char const* str)
+{
+	if(!str)
+		return "null";
+
+	size_t cnt = 0;
+	char const* loc = str;
+	while(loc = strchr(loc, '"'))
+	{
+		++loc;
+		++cnt;
+	}
+
+	if(cnt > 0 || strchr(str, ','))
+	{
+		char* buf = (char*)malloc(strlen(str) + cnt + 3);
+		char* dst = buf;
+		*dst++ = '"';
+		while(*str)
+		{
+			if(*str == '"')
+				*dst++ = '"';
+			*dst++ = *str++;
+		}
+		*dst++ = '"';
+		*dst++ = '\0';
+
+		str = buf;
+	}
+	return str;
+}
+
+static void log_usage ()
+{
+	if(char const* logfile = getenv("TEXTMATE_MIGRATION_LOG"))
+	{
+		if(FILE* fp = fopen(logfile, "a"))
+		{
+			if(ftell(fp) == 0)
+				fprintf(fp, "date,bundleItemUUID,bundleItemName,component,extra\n");
+
+			time_t t = time(nullptr);
+			struct tm* utc = gmtime(&t);
+			char date[24];
+			strftime(date, sizeof(date), "%FT%TZ", utc);
+
+			char const* bundleItemUUID = getenv("TM_BUNDLE_ITEM_UUID");
+			char const* bundleItemName = getenv("TM_BUNDLE_ITEM_NAME");
+
+			fprintf(fp, "%s,%s,%s,%s,\n", csv_escape_string(date), csv_escape_string(bundleItemUUID), csv_escape_string(bundleItemName), csv_escape_string(getprogname()));
+			fclose(fp);
+		}
+	}
+}
 
 id read_property_list_from_data (NSData* data)
 {
@@ -475,7 +530,7 @@ int main (int argc, char* argv[])
 	argc -= optind;
 	argv += optind;
 
-
+	log_usage();
 
 	if(dialogAction != kShowDialog)
 	{
