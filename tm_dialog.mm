@@ -14,8 +14,8 @@
 #include "TMDSemaphore.mm"  // TODO we should really export this from the plugin instead and link against the plugin
 #import "Dialog.h"
 
-static char const* const AppName = "tm_dialog";
-static double const AppVersion   = 1.0;
+static char const* const AppName    = "tm_dialog";
+static char const* const AppVersion = "1.0";
 
 id read_property_list_from_data (NSData* data)
 {
@@ -308,7 +308,7 @@ int contact_server_show_nib (std::string nibName, NSMutableDictionary* someParam
 void usage (FILE* io = stderr)
 {
 	fprintf(io,
-		"%1$s %2$.1f (" __DATE__ ")\n"
+		"%1$s %2$s (" __DATE__ ")\n"
 		"\n"
 		"  *******************************\n"
 		"  * This version is deprecated. *\n"
